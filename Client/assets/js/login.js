@@ -60,7 +60,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('❌ Error en login:', error);
-            showAlert(error.message || 'Credenciales incorrectas. Intenta nuevamente.', 'danger');
+            
+            // Mostrar toast en lugar de alert dentro del form
+            let errorMessage = error.message || 'Credenciales incorrectas. Intenta nuevamente.';
+            
+            // Si es error de email no confirmado, mostrar toast específico
+            if (error.code === 'email_not_confirmed' || errorMessage.includes('Aún no confirmas')) {
+                showToast('⚠️ Aún no confirmas el correo. Revisa tu bandeja de entrada.', 'warning');
+            } else {
+                showToast(errorMessage, 'danger');
+            }
         } finally {
             // Restaurar botón
             submitBtn.innerHTML = originalText;
@@ -71,6 +80,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // ✅ FUNCIÓN MEJORADA: Redirección después de login
     function redirectAfterLogin(user) {
         console.log('🔄 Iniciando redirección después de login...');
+        console.log('👤 Usuario recibido:', {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            rol: user.rol
+        });
+        
+        // ✅ VERIFICAR SESSIONSTORA GE ANTES DE REDIRIGIR
+        console.log('📦 sessionStorage ANTES de redirect:', {
+            user_id: sessionStorage.getItem('user_id'),
+            user_role: sessionStorage.getItem('user_role'),
+            user_email: sessionStorage.getItem('user_email'),
+            user_name: sessionStorage.getItem('user_name')
+        });
         
         // ✅ PEQUEÑO DELAY PARA ASEGURAR QUE TODO ESTÉ CARGADO
         setTimeout(() => {
@@ -98,6 +121,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function redirectByRole(user) {
         const role = user.role || user.rol || 'cliente';
         console.log('🎯 Redirigiendo por rol después de login:', role);
+        console.log('👤 User data en redirectByRole:', {
+            role: user.role,
+            rol: user.rol,
+            id: user.id,
+            email: user.email
+        });
         
         // ✅ PRIMERO VERIFICAR SI HAY UNA REDIRECCIÓN PENDIENTE
         const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
@@ -132,6 +161,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         console.log('📍 Redirigiendo al dashboard:', targetPage);
+        console.log('📦 sessionStorage en momento de redirect:', {
+            user_id: sessionStorage.getItem('user_id'),
+            user_role: sessionStorage.getItem('user_role'),
+            user_email: sessionStorage.getItem('user_email'),
+            user_name: sessionStorage.getItem('user_name')
+        });
         window.location.replace(targetPage);
     }
 
@@ -155,6 +190,49 @@ document.addEventListener('DOMContentLoaded', function() {
             if (alertDiv.parentNode) {
                 alertDiv.remove();
             }
+        }, 5000);
+    }
+
+    // ✅ FUNCIÓN PARA MOSTRAR TOAST (notificación flotante)
+    function showToast(message, type = 'info') {
+        // Crear contenedor de toasts si no existe
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            `;
+            document.body.appendChild(toastContainer);
+        }
+
+        // Crear elemento toast
+        const toastEl = document.createElement('div');
+        const bgColor = type === 'warning' ? 'warning' : type === 'danger' ? 'danger' : 'info';
+        const textColor = type === 'warning' ? 'dark' : 'white';
+        
+        toastEl.className = `alert alert-${bgColor} alert-dismissible fade show`;
+        toastEl.style.cssText = `
+            min-width: 300px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease-out;
+        `;
+        toastEl.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        toastContainer.appendChild(toastEl);
+
+        // Auto-remover después de 5 segundos
+        setTimeout(() => {
+            toastEl.remove();
         }, 5000);
     }
 

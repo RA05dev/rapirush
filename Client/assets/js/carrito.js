@@ -105,6 +105,7 @@ class ShoppingCart {
                 quantity: product.quantity || 1,
                 image: product.image || 'https://via.placeholder.com/100',
                 restaurant: typeof product.restaurant === 'string' ? product.restaurant : '',
+                restaurante_id: product.restaurante_id || null,  // ← Guardar ID del restaurante
                 notes: product.notes || ''
             });
         }

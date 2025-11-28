@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { supabase } from './src/config/supabaseClient.js';
+import { startApprovalScheduler } from './src/utils/approvalScheduler.js';
 import authRoutes from './src/routes/authRoutes.js';
 import restaurantRoutes from './src/routes/restaurantRoutes.js';
 import productRoutes from './src/routes/productRoutes.js';
@@ -95,7 +96,7 @@ app.get('/api/supabase-test', async (req, res) => {
       sample: data,
       connection: {
         url: process.env.SUPABASE_URL,
-        hasKey: !!process.env.SUPABASE_ANON_KEY
+        hasKey: !!process.env.SUPABASE_SERVICE_KEY
       }
     });
   } catch (error) {
@@ -120,8 +121,6 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-// ✅ ELIMINAR COMPLETAMENTE CUALQUIER RUTA CON * O PATRONES COMODÍN
-// En su lugar, manejamos rutas no encontradas de forma específica
 
 // Ruta para cualquier otra ruta bajo /api/ que no exista
 app.use('/api', (req, res) => {
@@ -156,15 +155,9 @@ app.use((error, req, res, next) => {
 
 // Ruta raíz
 app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: '🚀 Servidor RapiRush API',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-      config: '/api/config'
-    }
-  });
+    res.send('<h1>✅ Tu correo fue confirmado correctamente</h1><p>Ya puedes iniciar sesión en RapiRush.</p>');
+
+  
 });
 
 // Iniciar servidor
@@ -174,4 +167,7 @@ app.listen(PORT, () => {
   console.log(`🔗 Prueba Supabase: http://localhost:${PORT}/api/supabase-test`);
   console.log(`🔐 Rutas Auth disponibles en: http://localhost:${PORT}/api/auth`);
   console.log(`⚙️  Configuración: http://localhost:${PORT}/api/config`);
+  
+  // ✅ Scheduler deshabilitado - Restaurantes/Repartidores se crean con estado 'activo' directo
+  // startApprovalScheduler();
 });

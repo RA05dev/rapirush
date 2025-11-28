@@ -87,9 +87,9 @@ async request(endpoint, options = {}) {
           email: userData.email,
           password: userData.password,
           userData: {
-            nombres: userData.fullName,
-            telefono: userData.phone,
-            direccion: userData.address || ''
+            nombres: userData.nombres || userData.fullName || '',
+            telefono: userData.telefono || userData.phone || '',
+            direccion: userData.direccion || userData.address || ''
           }
         })
       });
@@ -121,7 +121,7 @@ async request(endpoint, options = {}) {
         },
         body: JSON.stringify({
           email: userData.email,
-          password: userData.password || 'tempPassword123', // Password temporal
+          password: userData.password, // ← Usar contraseña del usuario
           userData: {
             nombre: userData.nombre,
             telefono: userData.telefono,
@@ -158,7 +158,7 @@ async request(endpoint, options = {}) {
         },
         body: JSON.stringify({
           email: userData.email,
-          password: userData.password || 'tempPassword123', // Password temporal
+          password: userData.password, // ← Usar contraseña del usuario
           userData: {
             nombre: userData.nombre,
             telefono: userData.telefono,
@@ -199,7 +199,9 @@ async request(endpoint, options = {}) {
       console.log('📥 Respuesta login:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error en el login');
+        const error = new Error(data.error || 'Error en el login');
+        error.code = data.code; // ✅ Pasar código de error
+        throw error;
       }
 
       // ✅ CONFIGURAR EL TOKEN AUTOMÁTICAMENTE SI EXISTE
@@ -233,7 +235,9 @@ async request(endpoint, options = {}) {
       console.log('📥 Respuesta login:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error en el login');
+        const error = new Error(data.error || 'Error en el login');
+        error.code = data.code; // ✅ Pasar código de error
+        throw error;
       }
 
       // ❌ LOS MÉTODOS ESTÁTICOS NO CONFIGURAN EL TOKEN EN LA INSTANCIA
@@ -448,6 +452,23 @@ async request(endpoint, options = {}) {
   static async register(userData) {
     // Por defecto usa registro de cliente para mantener compatibilidad
     return this.registerCliente(userData);
+  }
+
+  // ✅ ACTUALIZAR ESTADO DEL PEDIDO
+  async updateOrderStatus(orderId, newStatus) {
+    try {
+      console.log('📝 Actualizando estado del pedido:', { orderId, newStatus });
+      
+      const response = await this.request(`/orders/${orderId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ estado: newStatus })
+      });
+
+      return response;
+    } catch (error) {
+      console.error('❌ Error actualizando estado:', error);
+      throw error;
+    }
   }
 }
 

@@ -1,17 +1,30 @@
 // ==============================
 // cliente.js – Panel del cliente (CORREGIDO)
 // ==============================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   console.log('🚀 Iniciando dashboard cliente...');
+  
+  // ✅ ESPERAR a que authManager esté listo
+  if (window.authManager && typeof window.authManager.isReady === 'function') {
+    await window.authManager.isReady();
+    console.log('✅ authManager está listo');
+  }
+  
+  console.log('📦 authManager:', !!window.authManager);
+  console.log('🔍 isLoggedIn():', window.authManager?.isLoggedIn());
+  console.log('👤 currentUser:', window.authManager?.getCurrentUser());
   
   // ✅ USAR authManager en lugar de sessionStorage viejo
   if (!window.authManager || !authManager.isLoggedIn()) {
     console.log('❌ No hay sesión en authManager, redirigiendo...');
+    console.log('💾 localStorage.currentUser:', localStorage.getItem('currentUser'));
+    console.log('💾 localStorage.token:', localStorage.getItem('supabaseAuthToken')?.substring(0, 20) + '...');
     window.location.href = '../auth/login.html';
     return;
   }
 
   const user = authManager.getCurrentUser();
+  console.log('👤 Usuario obtenido:', user);
   
   // ✅ VERIFICAR que sea cliente
   if (user.role !== 'cliente') {
@@ -125,11 +138,11 @@ function initializeCart() {
 // ==============================
 // 🔹 CARGAR PEDIDOS
 // ==============================
-// 🔹 CARGAR PEDIDOS - VERSIÓN MEJORADA
+let currentUserOrders = [];  // ← Variable global para guardar pedidos
 async function loadOrders(user) {
   console.log('📦 Cargando pedidos...');
   
-  const ACTIVE_STATES = ['pendiente', 'preparando', 'en camino', 'llegado', 'delivering', 'preparing'];
+  const ACTIVE_STATES = ['recibido', 'preparando', 'camino', 'listo', 'camino', 'llegado'];
   
   let orders = [];
 
@@ -143,7 +156,14 @@ async function loadOrders(user) {
         id: dbOrder.id,
         numero: `#${dbOrder.id.toString().slice(-6)}`,
         date: dbOrder.creado_en,
-        items: dbOrder.pedido_detalle || [],
+        // ✅ MAPEAR ITEMS CORRECTAMENTE DEL BACKEND
+        items: (dbOrder.pedido_detalle || []).map(item => ({
+          name: item.nombre_item,
+          quantity: item.cantidad,
+          price: item.precio,
+          description: item.descripcion || '',
+          note: item.nota_producto || ''
+        })),
         subtotal: dbOrder.subtotal,
         delivery: dbOrder.delivery_fee,
         discount: dbOrder.descuento,
@@ -151,8 +171,9 @@ async function loadOrders(user) {
         status: dbOrder.estado,
         email: dbOrder.cliente_email,
         name: dbOrder.cliente_nombre,
-        address: dbOrder.direccion_entrega,
-        district: dbOrder.distrito,
+        deliveryAddress: dbOrder.direccion_entrega,
+        district: dbOrder.distrito_entrega,
+        deliveryNote: dbOrder.nota_repartidor,
         paymentMethod: dbOrder.metodo_pago
       }));
       console.log(`✅ ${orders.length} pedidos obtenidos de la base de datos`);
@@ -173,9 +194,14 @@ async function loadOrders(user) {
   if (!orders || orders.length === 0) {
     activosContainer.innerHTML = '<div class="text-muted text-center py-3">No hay pedidos activos</div>';
     historialContainer.innerHTML = '<div class="text-muted text-center py-3">Todavía no tienes historial de pedidos</div>';
+    currentUserOrders = [];  // ← Guardar lista vacía
+    computeStats(currentUserOrders);  // ← Actualizar estadísticas
     return;
   }
 
+  // ← GUARDAR PEDIDOS PARA USAR EN ESTADÍSTICAS
+  currentUserOrders = orders;
+  
   orders.forEach(function(order) {
     renderOrderItem(order, activosContainer, historialContainer, ACTIVE_STATES);
   });
@@ -224,7 +250,7 @@ function showOrderDetails(order) {
   html += `</div>`;
   
   // Mostrar información de entrega si está disponible
-  if (order.deliveryAddress || order.deliveryNote) {
+  if (order.deliveryAddress || order.deliveryNote || order.referencia_entrega || order.reference) {
     html += `
       <hr>
       <h6 class="fw-bold mb-3">🏠 Información de Entrega</h6>
@@ -232,6 +258,7 @@ function showOrderDetails(order) {
         <div class="card-body">
           ${order.deliveryAddress ? `<p class="mb-1"><strong>Dirección:</strong> ${order.deliveryAddress}</p>` : ''}
           ${order.district ? `<p class="mb-1"><strong>Distrito:</strong> ${order.district}</p>` : ''}
+          ${order.referencia_entrega || order.reference ? `<p class="mb-1"><strong>Referencia:</strong> ${order.referencia_entrega || order.reference}</p>` : ''}
           ${order.deliveryNote ? `<p class="mb-0"><strong>Nota para repartidor:</strong> ${order.deliveryNote}</p>` : ''}
         </div>
       </div>`;
@@ -261,7 +288,7 @@ function showTracking(order) {
       <div class="card-body">
         ${order.deliveryAddress ? `<p class="mb-2"><strong>📍 Dirección:</strong><br>${order.deliveryAddress}</p>` : ''}
         ${order.district ? `<p class="mb-2"><strong>🗺️ Distrito:</strong> ${order.district}</p>` : ''}
-        ${order.deliveryReference ? `<p class="mb-2"><strong>📌 Referencia:</strong> ${order.deliveryReference}</p>` : ''}
+        ${order.referencia_entrega || order.reference ? `<p class="mb-2"><strong>🔑 Referencia:</strong> ${order.referencia_entrega || order.reference}</p>` : ''}
         ${order.deliveryNote ? `<p class="mb-0"><strong>📝 Nota para repartidor:</strong><br><em>"${order.deliveryNote}"</em></p>` : ''}
       </div>
     </div>`;
@@ -368,8 +395,38 @@ function renderOrderItem(order, activosContainer, historialContainer, ACTIVE_STA
   });
 
   const btnWrap = document.createElement('div');
-  btnWrap.className = 'mt-2 d-flex justify-content-end';
+  btnWrap.className = 'mt-2 d-flex justify-content-end gap-2';
   btnWrap.appendChild(trackBtn);
+
+  // ✅ AGREGAR BOTONES ADICIONALES SEGÚN EL ESTADO
+  if (isActive) {
+    // Botón para cancelar si está recibido
+    if (String(order.status).toLowerCase() === 'recibido') {
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn btn-sm btn-danger';
+      cancelBtn.innerHTML = '<i class="bi bi-x-circle"></i> Cancelar';
+      cancelBtn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        cancelOrder(order.id);
+      });
+      btnWrap.appendChild(cancelBtn);
+    }
+
+    // Botón para confirmar entrega si está llegado
+    if (String(order.status).toLowerCase() === 'llegado') {
+      const confirmBtn = document.createElement('button');
+      confirmBtn.className = 'btn btn-sm btn-success';
+      confirmBtn.innerHTML = '<i class="bi bi-check-circle"></i> Confirmar entrega';
+      confirmBtn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        confirmDelivery(order.id);
+      });
+      btnWrap.appendChild(confirmBtn);
+    }
+  }
+
   item.appendChild(btnWrap);
 
   if (isActive) {
@@ -382,9 +439,8 @@ function renderOrderItem(order, activosContainer, historialContainer, ACTIVE_STA
 // ==============================
 // 🔹 CALCULAR ESTADÍSTICAS
 // ==============================
-function computeStats(user) {
-  const orders = window.Session && window.Session.getOrders ? 
-    window.Session.getOrders(user.email) : [];
+function computeStats(orders = currentUserOrders) {
+  console.log('📊 Calculando estadísticas con', orders.length, 'pedidos');
   
   const total = orders.length;
   const now = new Date();
@@ -395,7 +451,7 @@ function computeStats(user) {
   let totalSpentAllTime = 0;
 
   orders.forEach(order => {
-    const orderDate = new Date(order.date);
+    const orderDate = new Date(order.date || order.creado_en);
     const amount = Number(order.total) || 0;
     
     totalSpentAllTime += amount;
@@ -404,11 +460,68 @@ function computeStats(user) {
     }
   });
 
+  // ✅ 1 SOL = 1 PUNTO
   const points = Math.floor(totalSpentAllTime);
   
   document.getElementById('totalOrdersCount').textContent = total;
   document.getElementById('spentThisMonth').textContent = spentThisMonth.toFixed(2);
   document.getElementById('userPoints').textContent = points;
   
-  console.log('📊 Estadísticas calculadas:', { total, spentThisMonth, points });
+  console.log('📊 Estadísticas actualizadas:', { total, spentThisMonth, points });
+}
+
+// ==============================
+// 🔹 CANCELAR PEDIDO
+// ==============================
+async function cancelOrder(orderId) {
+  const confirmed = confirm('¿Estás seguro de que deseas cancelar este pedido?');
+  if (!confirmed) return;
+
+  try {
+    console.log('❌ Cancelando pedido:', orderId);
+    
+    // Llamar a API para cancelar
+    const response = await window.rapiRushAPI.updateOrderStatus(orderId, 'cancelado');
+    
+    if (response.success) {
+      alert('Pedido cancelado exitosamente');
+      // Recargar pedidos
+      const user = authManager.getCurrentUser();
+      await loadOrders(user);
+      computeStats(currentUserOrders);  // ← Actualizar estadísticas
+    } else {
+      alert('Error al cancelar: ' + (response.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('❌ Error cancelando pedido:', error);
+    alert('Error al cancelar el pedido');
+  }
+}
+
+// ==============================
+// 🔹 CONFIRMAR ENTREGA
+// ==============================
+async function confirmDelivery(orderId) {
+  const confirmed = confirm('¿Confirmas que recibiste tu pedido correctamente?');
+  if (!confirmed) return;
+
+  try {
+    console.log('✅ Confirmando entrega:', orderId);
+    
+    // Llamar a API para marcar como entregado
+    const response = await window.rapiRushAPI.updateOrderStatus(orderId, 'entregado');
+    
+    if (response.success) {
+      alert('¡Gracias por tu compra! Pedido marcado como entregado.');
+      // Recargar pedidos
+      const user = authManager.getCurrentUser();
+      await loadOrders(user);
+      computeStats(currentUserOrders);  // ← Actualizar estadísticas
+    } else {
+      alert('Error al confirmar: ' + (response.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('❌ Error confirmando entrega:', error);
+    alert('Error al confirmar la entrega');
+  }
 }

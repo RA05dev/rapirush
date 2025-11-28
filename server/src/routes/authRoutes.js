@@ -10,6 +10,7 @@ import {
   logout,
   getProfile
 } from '../controllers/authController.js';
+import { adminController } from '../controllers/adminController.js';
 import { authMiddleware, optionalAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -282,5 +283,19 @@ router.get('/current-user', authMiddleware, async (req, res) => {
     });
   }
 });
+
+// ✅ RUTAS ADMIN (requieren autenticación)
+
+// Obtener usuarios pendientes (restaurantes y repartidores)
+router.get('/admin/pending-users', authMiddleware, adminController.getPendingUsers);
+
+// Aprobar usuario (restaurante o repartidor)
+router.post('/admin/approve-user', authMiddleware, adminController.approveUser);
+
+// Rechazar usuario
+router.post('/admin/reject-user', authMiddleware, adminController.rejectUser);
+
+// Obtener estadísticas
+router.get('/admin/stats', authMiddleware, adminController.getStats);
 
 export default router;

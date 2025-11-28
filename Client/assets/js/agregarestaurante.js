@@ -36,7 +36,8 @@ document.addEventListener('DOMContentLoaded', function() {
             direccion: document.getElementById('rest-address').value.trim(),
             tipoComida: document.getElementById('tipoComida').value,
             password: document.getElementById('rest-password').value,
-            confirmPassword: document.getElementById('rest-confirm-password').value
+            confirmPassword: document.getElementById('rest-confirm-password').value,
+            image_url: document.getElementById('rest-image-url').value.trim() || null
         };
 
         console.log('📝 Datos del formulario:', { ...userData, password: '***' });
@@ -77,12 +78,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('✅ Restaurante registrado exitosamente:', result);
             
-            showAlert('¡Registro exitoso! Tu restaurante ha sido creado.', 'success');
+            showToast('✅ ¡Registrado! Confirma tu email para iniciar sesión', 'success');
             
-            // Redirigir al dashboard después de 2 segundos
+            // Redirigir al login después de 2 segundos
             setTimeout(() => {
-                console.log('🔄 Redirigiendo a dashboard...');
-                window.location.href = '../dashboard/restaurante.html';
+                console.log('🔄 Redirigiendo a login...');
+                window.location.href = '../auth/login.html';
             }, 2000);
 
         } catch (error) {
@@ -116,6 +117,48 @@ document.addEventListener('DOMContentLoaded', function() {
             if (alertDiv.parentNode) {
                 alertDiv.remove();
             }
+        }, 5000);
+    }
+
+    // ✅ FUNCIÓN PARA MOSTRAR TOAST (notificación flotante)
+    function showToast(message, type = 'info') {
+        // Crear contenedor de toasts si no existe
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            `;
+            document.body.appendChild(toastContainer);
+        }
+
+        // Crear elemento toast
+        const toastEl = document.createElement('div');
+        const bgColor = type === 'success' ? 'success' : type === 'danger' ? 'danger' : 'info';
+        
+        toastEl.className = `alert alert-${bgColor} alert-dismissible fade show`;
+        toastEl.style.cssText = `
+            min-width: 300px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease-out;
+        `;
+        toastEl.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        toastContainer.appendChild(toastEl);
+
+        // Auto-remover después de 5 segundos
+        setTimeout(() => {
+            toastEl.remove();
         }, 5000);
     }
 

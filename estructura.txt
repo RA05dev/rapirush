@@ -68,4 +68,26 @@ RapiRush/
 │
 └── README.md                                 # Documentación general del proyecto
 
-
+CLIENTE CREA PEDIDO
+    ↓
+Estado: 'pendiente'  ← Aquí aparece en "Pedidos Activos"
+    ↓
+RESTAURANTE APRUEBA (debe implementarse dashboard restaurante)
+    ↓
+Estado: 'aceptado'
+    ↓
+RESTAURANTE MARCA "PREPARANDO"
+    ↓
+Estado: 'preparando'
+    ↓
+REPARTIDOR RECOGE Y MARCA "EN CAMINO"
+    ↓
+Estado: 'en camino'
+    ↓
+REPARTIDOR LLEGA
+    ↓
+Estado: 'llegado'  ← Aparece botón "Confirmar entrega" (verde)
+    ↓
+CLIENTE CONFIRMA ENTREGA (click en botón)
+    ↓
+Estado: 'entregado'  ← Pasa a "Historial de pedidos"

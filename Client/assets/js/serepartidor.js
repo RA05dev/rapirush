@@ -15,13 +15,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const userData = {
             nombre: document.getElementById('nombre').value.trim(),
             email: document.getElementById('correo').value.trim(),
+            password: document.getElementById('password').value,
+            confirmPassword: document.getElementById('confirm-password').value,
             telefono: document.getElementById('telefono').value.trim(),
             vehiculo: document.getElementById('vehiculo').value
         };
 
         // Validaciones básicas
-        if (!userData.nombre || !userData.email || !userData.telefono || !userData.vehiculo) {
+        if (!userData.nombre || !userData.email || !userData.password || !userData.confirmPassword || !userData.telefono || !userData.vehiculo) {
             showAlert('Por favor completa todos los campos obligatorios', 'danger');
+            return;
+        }
+
+        // Validar que las contraseñas coincidan
+        if (userData.password !== userData.confirmPassword) {
+            showAlert('Las contraseñas no coinciden', 'danger');
+            return;
+        }
+
+        // Validar longitud de contraseña
+        if (userData.password.length < 6) {
+            showAlert('La contraseña debe tener al menos 6 caracteres', 'danger');
             return;
         }
 
@@ -44,18 +58,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('✅ Repartidor registrado exitosamente:', result);
             
-            showAlert('¡Solicitud enviada exitosamente! Te contactaremos pronto para activar tu cuenta de repartidor.', 'success');
+            showToast('✅ ¡Registrado! Confirma tu email para iniciar sesión', 'success');
             
-            // Guardar datos en sessionStorage
-            sessionStorage.setItem('user_role', 'repartidor');
-            sessionStorage.setItem('user_id', result.user.id);
-            sessionStorage.setItem('user_name', result.user.nombre);
-            sessionStorage.setItem('user_email', result.user.email);
-            
-            // Redirigir después de 3 segundos
+            // Redirigir al login después de 2 segundos
             setTimeout(() => {
-                window.location.href = '../dashboard/repartidor.html';
-            }, 3000);
+                window.location.href = '../auth/login.html';
+            }, 2000);
 
         } catch (error) {
             console.error('❌ Error en registro de repartidor:', error);
@@ -89,6 +97,48 @@ document.addEventListener('DOMContentLoaded', function() {
             if (alertDiv.parentNode) {
                 alertDiv.remove();
             }
+        }, 5000);
+    }
+
+    // ✅ FUNCIÓN PARA MOSTRAR TOAST (notificación flotante)
+    function showToast(message, type = 'info') {
+        // Crear contenedor de toasts si no existe
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            `;
+            document.body.appendChild(toastContainer);
+        }
+
+        // Crear elemento toast
+        const toastEl = document.createElement('div');
+        const bgColor = type === 'success' ? 'success' : type === 'danger' ? 'danger' : 'info';
+        
+        toastEl.className = `alert alert-${bgColor} alert-dismissible fade show`;
+        toastEl.style.cssText = `
+            min-width: 300px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease-out;
+        `;
+        toastEl.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        toastContainer.appendChild(toastEl);
+
+        // Auto-remover después de 5 segundos
+        setTimeout(() => {
+            toastEl.remove();
         }, 5000);
     }
 });

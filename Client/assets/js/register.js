@@ -103,11 +103,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('✅ Registro exitoso:', user);
             
-            showAlert(`¡Cuenta creada exitosamente! Bienvenido ${user.name}`, 'success');
+            console.log('✅ Registro exitoso:', user);
             
-            // Redirigir al dashboard
+            // ✅ CLIENTES DEBEN VERIFICAR EMAIL ANTES DE PODER INICIAR SESIÓN
+            showAlert(`¡Cuenta creada! Por favor verifica tu email para poder iniciar sesión.`, 'success');
+            
+            // ✅ REDIRIGIR AL LOGIN (no al dashboard) - deben verificar email primero
             setTimeout(() => {
-                window.location.href = window.authManager.getDashboardUrl();
+                window.location.href = '../auth/login.html';
             }, 2000);
 
         } catch (error) {

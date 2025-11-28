@@ -3,7 +3,7 @@ class AuthManager {
     constructor() {
         this.currentUser = null;
         this.token = null;
-        this.init();
+        this.initPromise = this.init();
     }
 
     async init() {
@@ -157,8 +157,8 @@ class AuthManager {
             const result = await window.rapiRushAPI.login(email, password);
             console.log('✅ Login API result:', result);
 
-            if (!result || !result.user) {
-                throw new Error('Credenciales incorrectas');
+            if (!result.success || !result.user) {
+                throw new Error(result.error || 'Credenciales incorrectas');
             }
 
             // ✅ CONFIGURAR TOKEN
@@ -177,14 +177,31 @@ class AuthManager {
                 throw new Error('No se recibió token de autenticación');
             }
 
+            // ✅ GUARDAR DATOS EN sessionStorage PARA LOS DASHBOARDS
+            sessionStorage.setItem('user_id', result.user.id);
+            sessionStorage.setItem('user_email', result.user.email);
+            sessionStorage.setItem('user_role', result.user.rol);
+            sessionStorage.setItem('user_name', result.user.nombre || result.user.nombres || result.user.email);
+            
             // ✅ SINCRONIZAR DATOS DEL USUARIO
-            await this.syncUserData(result);
+            this.currentUser = {
+                id: result.user.id,
+                email: result.user.email,
+                name: result.user.nombre || result.user.nombres || result.user.email,
+                role: result.user.rol,  // ✅ Usar 'role' para compatibilidad
+                rol: result.user.rol,   // ✅ También guardar como 'rol'
+                loggedIn: true,         // ✅ CRÍTICO: Marcar como logueado
+                ...result.user
+            };
+            
+            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
             
             // ✅ VERIFICACIÓN FINAL
             console.log('🔍 Verificación final login:', {
                 tokenEnAuthManager: !!this.token,
                 tokenEnRapiRushAPI: !!window.rapiRushAPI?.token,
                 tokenEnLocalStorage: !!localStorage.getItem('supabaseAuthToken'),
+                sessionStorageUser_id: sessionStorage.getItem('user_id'),
                 usuario: this.currentUser
             });
 
@@ -208,12 +225,29 @@ class AuthManager {
                 throw new Error('Error en el registro');
             }
 
-            if (result.session && result.session.access_token) {
+            // ✅ SOLO guardar token si es válido (no "null")
+            if (result.session && result.session.access_token && result.session.access_token !== 'null') {
                 this.token = result.session.access_token;
                 window.rapiRushAPI.setToken(this.token);
+                localStorage.setItem('supabaseAuthToken', this.token);
+                console.log('🔐 Token guardado desde registro');
+            } else {
+                console.log('⚠️ Sin token válido - usuario debe verificar email');
             }
 
-            await this.syncUserData(result.user);
+            // ✅ NO hacer syncUserData si no hay token válido
+            if (this.token) {
+                await this.syncUserData(result.user);
+            } else {
+                // ✅ Si no hay token, guardar info básica
+                this.currentUser = {
+                    id: result.user.id,
+                    email: result.user.email,
+                    name: result.user.nombres || result.user.email,
+                    role: 'cliente',
+                    loggedIn: false  // ✅ NO está logueado hasta que verifique email
+                };
+            }
             
             this.updateGlobalUI();
             console.log('✅ Registro exitoso');
@@ -226,20 +260,89 @@ class AuthManager {
         }
     }
 
+    async registerRestaurante(userData) {
+        try {
+            console.log('📤 Registrando restaurante...');
+            
+            const result = await RapiRushAPI.registerRestaurante(userData);
+
+            if (!result || !result.user) {
+                throw new Error('Error en el registro del restaurante');
+            }
+
+            if (result.session && result.session.access_token) {
+                this.token = result.session.access_token;
+                window.rapiRushAPI.setToken(this.token);
+            }
+
+            await this.syncUserData(result.user);
+            
+            this.updateGlobalUI();
+            console.log('✅ Registro de restaurante exitoso');
+
+            return this.currentUser;
+
+        } catch (error) {
+            console.error('💥 Error en registro de restaurante:', error);
+            throw error;
+        }
+    }
+
+    async registerRepartidor(userData) {
+        try {
+            console.log('📤 Registrando repartidor...');
+            
+            const result = await RapiRushAPI.registerRepartidor(userData);
+
+            if (!result || !result.user) {
+                throw new Error('Error en el registro del repartidor');
+            }
+
+            if (result.session && result.session.access_token) {
+                this.token = result.session.access_token;
+                window.rapiRushAPI.setToken(this.token);
+            }
+
+            await this.syncUserData(result.user);
+            
+            this.updateGlobalUI();
+            console.log('✅ Registro de repartidor exitoso');
+
+            return this.currentUser;
+
+        } catch (error) {
+            console.error('💥 Error en registro de repartidor:', error);
+            throw error;
+        }
+    }
+
     async logout() {
         try {
+            // ✅ LIMPIAR INMEDIATAMENTE para evitar doble-click
+            this.clearAuth();
+            
+            // ✅ INTENTAR LOGOUT EN API (no-blocking)
             if (this.token) {
-                await RapiRushAPI.logout();
+                try {
+                    await window.rapiRushAPI.logout();
+                } catch (error) {
+                    console.warn('⚠️ Error en logout API (continuando):', error);
+                }
             }
-        } catch (error) {
-            console.warn('Error en logout API:', error);
-        } finally {
+            
+            // ✅ MOSTRAR TOAST
             this.showLogoutToast();
             
+            // ✅ REDIRIGIR INMEDIATAMENTE (sin delay largo)
             setTimeout(() => {
-                this.clearAuth();
                 window.location.href = this.getHomeUrl();
-            }, 1500);
+            }, 500);
+            
+        } catch (error) {
+            console.error('❌ Error crítico en logout:', error);
+            // ✅ FORZAR LIMPIEZA INCLUSO SI HAY ERROR
+            this.clearAuth();
+            window.location.href = this.getHomeUrl();
         }
     }
 
@@ -414,6 +517,12 @@ class AuthManager {
 
     isLoggedIn() {
         return this.currentUser !== null && this.currentUser.loggedIn === true;
+    }
+
+    async isReady() {
+        // Esperar a que init() termine
+        await this.initPromise;
+        return true;
     }
 
     getCurrentUser() {

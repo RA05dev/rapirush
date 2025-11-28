@@ -21,18 +21,14 @@
             </a>
         </div>
   </nav>
-  <!-- SECCIÓN PRINCIPAL -->
-  <section class="bg-danger text-white text-center py-5">
+
     <div class="container">
-      <h1 class="fw-bold mb-3">Conviértete en Repartidor</h1>
-      <p class="lead mb-4">Gana dinero entregando pedidos cuando quieras. ¡Tú eliges tu horario!</p>
-      <a href="#form" class="btn btn-light fw-semibold">Postular ahora</a>
+      <h1 class="fw-bold mb-3">Formulario de inscripción para Repartidor</h1>
+      <p class="lead mb-4 ">Gana dinero entregando pedidos cuando quieras. ¡Tú eliges tu horario!</p>
     </div>
-  </section>
   
   <!-- FORMULARIO -->
   <section id="form" class="container py-5">
-    <h2 class="text-center text-danger mb-4">Formulario de inscripción</h2>
     <div class="row justify-content-center">
       <div class="col-md-6">
         <form>
@@ -43,6 +39,15 @@
           <div class="mb-3">
             <label for="correo" class="form-label">Correo electrónico</label>
             <input type="email" id="correo" class="form-control" placeholder="correo@ejemplo.com" required>
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Contraseña</label>
+            <input type="password" id="password" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+            <small class="text-muted">Mínimo 6 caracteres</small>
+          </div>
+          <div class="mb-3">
+            <label for="confirm-password" class="form-label">Confirmar Contraseña</label>
+            <input type="password" id="confirm-password" class="form-control" placeholder="Repite tu contraseña" required minlength="6">
           </div>
           <div class="mb-3">
             <label for="telefono" class="form-label">Teléfono</label>

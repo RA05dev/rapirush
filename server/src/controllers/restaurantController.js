@@ -35,15 +35,22 @@ function convertToUUID(restaurantId) {
 }
 
 export const restaurantController = {
-  // ✅ OBTENER TODOS LOS RESTAURANTES
+  // ✅ OBTENER TODOS LOS RESTAURANTES (OPTIMIZADO CON PAGINACIÓN)
   async getAllRestaurants(req, res) {
     try {
       console.log('📤 Obteniendo todos los restaurantes desde Supabase...');
       
-      const { data, error } = await supabase
-        .from('restaurantes')  // ✅ CORREGIDO: 'restaurantes' no 'restaurants'
-        .select('*')
-        .order('nombre');
+      // Parámetros de paginación
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 12;
+      const offset = (page - 1) * limit;
+
+      // ✅ OPTIMIZACIÓN: Seleccionar solo campos necesarios
+      const { data, error, count } = await supabase
+        .from('restaurantes')
+        .select('id, nombre, descripcion, etiquetas, rating, reviews, tiempo_delivery, delivery_cost, direccion, abierto, image_url', { count: 'exact' })
+        .order('nombre')
+        .range(offset, offset + limit - 1);
 
       if (error) {
         console.error('❌ Error en Supabase:', error);
@@ -53,9 +60,9 @@ export const restaurantController = {
         });
       }
 
-      console.log(`📥 Restaurantes obtenidos: ${data?.length || 0}`);
+      console.log(`📥 Restaurantes obtenidos: ${data?.length || 0} de ${count}`);
       
-      // Transformar datos para el frontend (USANDO LOS CAMPOS REALES)
+      // Transformar datos para el frontend
       const restaurants = data.map(restaurant => ({
         id: restaurant.id,
         name: restaurant.nombre,
@@ -67,19 +74,16 @@ export const restaurantController = {
         deliveryCost: restaurant.delivery_cost || 2.50,
         location: restaurant.direccion || 'Lima, Perú',
         isOpen: restaurant.abierto !== false,
-        img: restaurant.image_url || 'assets/Img/basedatos.png',
-        // Campos compatibilidad
-        nombre: restaurant.nombre,
-        descripcion: restaurant.descripcion,
-        imagen: restaurant.image_url,
-        telefono: restaurant.telefono,
-        direccion: restaurant.direccion
+        img: restaurant.image_url || 'assets/Img/basedatos.png'
       }));
 
       res.json({
         success: true,
         data: restaurants,
-        count: restaurants.length
+        count: restaurants.length,
+        total: count,
+        page: page,
+        pages: Math.ceil(count / limit)
       });
 
     } catch (error) {

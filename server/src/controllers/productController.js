@@ -67,25 +67,47 @@ function getCategoryIcon(categoryName) {
 }
 
 export const productController = {
+    
     // ✅ OBTENER PRODUCTOS POR RESTAURANTE
 async getProductsByRestaurant(req, res) {
     try {
         let restaurantId = req.params.restaurantId;
         console.log(`📤 Obteniendo productos para restaurante: ${restaurantId}`);
         
-        // ✅ CONVERTIR ID NUMÉRICO A UUID
-        restaurantId = convertToUUID(restaurantId);
-        console.log(`🔄 ID convertido: ${restaurantId}`);
+        // ✅ INTENTAR PRIMERO CON ID CONVERTIDO, LUEGO CON ID TAL CUAL
+        let convertedId = convertToUUID(restaurantId);
+        console.log(`🔄 ID convertido: ${convertedId}`);
         
         // ✅ UNA SOLA CONSULTA CON JOIN (MUCHO MÁS RÁPIDO)
-        const { data: productsWithSizes, error } = await supabase
+        let { data: productsWithSizes, error } = await supabase
             .from('productos')
             .select(`
                 *,
                 producto_sizes (size, price)
             `)
-            .eq('restaurante_id', restaurantId)
+            .eq('restaurante_id', convertedId)
             .order('categoria');
+
+        console.log(`🔍 Primera búsqueda - Error: ${!!error}, Resultados: ${productsWithSizes?.length || 0}`);
+
+        if (error || !productsWithSizes || productsWithSizes.length === 0) {
+            console.log('⚠️ No encontrados con UUID convertido, intentando con ID original...');
+            
+            // ✅ INTENTAR CON ID ORIGINAL (para restaurantes antiguos)
+            const { data: productsWithSizesOriginal, error: errorOriginal } = await supabase
+                .from('productos')
+                .select(`
+                    *,
+                    producto_sizes (size, price)
+                `)
+                .eq('restaurante_id', restaurantId)
+                .order('categoria');
+
+            console.log(`🔍 Segunda búsqueda (ID original) - Error: ${!!errorOriginal}, Resultados: ${productsWithSizesOriginal?.length || 0}`);
+
+            productsWithSizes = productsWithSizesOriginal;
+            error = errorOriginal;
+        }
 
         if (error) {
             console.error('❌ Error obteniendo productos:', error);
@@ -95,7 +117,7 @@ async getProductsByRestaurant(req, res) {
             });
         }
 
-        console.log(`📥 Productos encontrados: ${productsWithSizes?.length || 0}`);
+        console.log(`📥 Productos encontrados FINALES: ${productsWithSizes?.length || 0}`);
 
         if (!productsWithSizes || productsWithSizes.length === 0) {
             return res.json({
@@ -128,6 +150,16 @@ async getProductsByRestaurant(req, res) {
             };
         });
 
+        // ✅ DEFINIR ORDEN DE CATEGORÍAS (Productos → Complementos → Bebidas)
+        const categoryOrder = [
+            'Pizzas', 'Hamburguesas', 'Pollo a la Brasa', 'Pastas', 'Platos Principales',
+            'Rolls', 'Sashimi & Niguiri', 'Makis', 'Temakis', 'Wraps', 'Tacos', 'Burritos',
+            'Ensaladas', 'Currys', 'Pasteles', 'Donas', 'Aperitivos', 'Cortes',
+            'Acompañamientos', 'Breads & Sides',
+            'Complementos', 'Basket',
+            'Bebidas', 'Bebidas Frías', 'Cafés'
+        ];
+
         // Agrupar por categoría
         const categories = {};
         processedProducts.forEach(product => {
@@ -142,7 +174,16 @@ async getProductsByRestaurant(req, res) {
             categories[product.category].products.push(product);
         });
 
-        const categoriesArray = Object.values(categories);
+        // ✅ ORDENAR CATEGORÍAS SEGÚN EL ORDEN DEFINIDO
+        const categoriesArray = Object.keys(categories)
+            .sort((a, b) => {
+                const indexA = categoryOrder.indexOf(a);
+                const indexB = categoryOrder.indexOf(b);
+                const aIndex = indexA >= 0 ? indexA : 999;
+                const bIndex = indexB >= 0 ? indexB : 999;
+                return aIndex - bIndex;
+            })
+            .map(key => categories[key]);
 
         res.json({
             success: true,
@@ -206,6 +247,81 @@ async getProductsByRestaurant(req, res) {
 
         } catch (error) {
             console.error('💥 Error en controller:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Error interno del servidor'
+            });
+        }
+    },
+
+    // ✅ CREAR NUEVO PRODUCTO (para restaurantes)
+    async createProduct(req, res) {
+        try {
+            const restaurantId = req.user.id; // Del token JWT
+            const { nombre, descripcion, categoria, base_price, image_url, sizes } = req.body;
+
+            console.log('📝 Creando producto para restaurante:', restaurantId);
+
+            // Validar datos
+            if (!nombre || !categoria || !base_price) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Nombre, categoría y precio son obligatorios'
+                });
+            }
+
+            // 1. Crear el producto
+            const { data: product, error: productError } = await supabase
+                .from('productos')
+                .insert([{
+                    restaurante_id: restaurantId,
+                    nombre: nombre,
+                    descripcion: descripcion || '',
+                    categoria: categoria,
+                    base_price: parseFloat(base_price),
+                    image: image_url || '',
+                    rating: 5.0,
+                    reviews: 0
+                }])
+                .select()
+                .single();
+
+            if (productError) {
+                console.error('❌ Error creando producto:', productError);
+                return res.status(400).json({
+                    success: false,
+                    error: 'Error al crear producto'
+                });
+            }
+
+            console.log('✅ Producto creado:', product.id);
+
+            // 2. Si hay tamaños, crearlos
+            if (sizes && Array.isArray(sizes) && sizes.length > 0) {
+                const sizesToInsert = sizes.map(s => ({
+                    producto_id: product.id,
+                    size: s.size,
+                    price: parseFloat(s.price)
+                }));
+
+                const { error: sizesError } = await supabase
+                    .from('producto_sizes')
+                    .insert(sizesToInsert);
+
+                if (sizesError) {
+                    console.error('⚠️ Error creando tamaños:', sizesError);
+                    // No es crítico, continuar
+                }
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'Producto creado exitosamente',
+                product: product
+            });
+
+        } catch (error) {
+            console.error('💥 Error en createProduct:', error);
             res.status(500).json({
                 success: false,
                 error: 'Error interno del servidor'

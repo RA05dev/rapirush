@@ -1,7 +1,8 @@
 -- 1. Tabla de usuarios (roles)
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    rol VARCHAR(20) NOT NULL CHECK (rol IN ('cliente', 'restaurante', 'repartidor', 'admin'))
+    rol VARCHAR(20) NOT NULL CHECK (rol IN ('cliente', 'restaurante', 'repartidor', 'admin')),
+    estado VARCHAR(20) DEFAULT 'pendiente'
 );
 
 -- 2. Tabla de clientes
@@ -62,7 +63,7 @@ CREATE TABLE repartidores (
 -- 7. Tabla de pedidos
 CREATE TABLE pedidos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cliente_id UUID REFERENCES usuarios(id),
+    cliente_id UUID REFERENCES clientes(id),
     restaurante_id UUID REFERENCES restaurantes(id),
     repartidor_id UUID REFERENCES repartidores(id),
     -- Totales
@@ -71,14 +72,14 @@ CREATE TABLE pedidos (
     delivery_fee NUMERIC(10,2) DEFAULT 0,
     descuento NUMERIC(10,2) DEFAULT 0,
     --estado
-    estado VARCHAR(20) CHECK (estado IN ('pendiente','recibido', 'aceptado', 'preparando', 'camino', 'llegado', 'entregado', 'cancelado')) DEFAULT 'pendiente',
+    estado VARCHAR(20) CHECK (estado IN ('recibido','aceptado', 'preparando', 'listo', 'camino', 'llegado', 'entregado', 'cancelado')) DEFAULT 'recibido',
      -- Información de entrega (obligatorios)
     direccion_entrega TEXT NOT NULL,
     distrito_entrega VARCHAR(100) NOT NULL,
     telefono_contacto VARCHAR(20) NOT NULL,
     -- Notas y referencias (OPCIONALES)
-    nota_repartidor TEXT, -- ✅ OPCIONAL: Nota general para el repartidor
-    referencia_entrega TEXT, -- ✅ OPCIONAL: Referencia del lugar
+    nota_repartidor TEXT, --  Nota general para el repartidor
+    referencia_entrega TEXT, --  Referencia del lugar
     
     -- Información de pago
     metodo_pago VARCHAR(20) NOT NULL,
@@ -101,8 +102,8 @@ CREATE TABLE pedido_detalle (
     cantidad INT NOT NULL,
     precio NUMERIC(10,2) NOT NULL,
     
-    -- Nota por producto (OPCIONAL)
-    nota_producto TEXT -- ✅ OPCIONAL: Nota específica para este producto
+    -- Nota por producto 
+    nota_producto TEXT -- Nota específica para este producto
 );
 
 -- 9. Tabla de rastreo de pedidos
@@ -114,7 +115,10 @@ CREATE TABLE pedido_rastreo (
     fecha TIMESTAMP DEFAULT NOW()
 );
 
-
+--PARA el ADMIN  se creo directo en la base de datos  
+  -- se inserto estos datos
+  INSERT INTO usuarios (id, rol, estado)
+VALUES ('f22d19b8-1e03-4a36-95ef-bc34cd1bf2fb', 'admin', 'activo');
 
 
 ⭐ TU BASE DE DATOS FINAL (REPASO)

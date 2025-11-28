@@ -158,7 +158,7 @@ function renderProducts(products, container, restaurantInfo, categoryName) {
             <div class="text-small text-muted">Envío S/ ${restaurantInfo.deliveryCost || '0'}.00</div>
           </div>
           <button class="btn btn-primary btn-sm"
-            onclick="openProductModal('${escapedName}', ${basePrice}, '${escapedDesc}', '${escapedImage}', ${sizesSafe}, '${escapedRestaurant}')">
+            onclick="openProductModal('${escapedName}', ${basePrice}, '${escapedDesc}', '${escapedImage}', ${sizesSafe}, '${escapedRestaurant}', '${restaurantInfo.id}')">
             <i class="bi bi-cart-plus"></i> Agregar
           </button>
         </div>
@@ -173,14 +173,15 @@ function renderProducts(products, container, restaurantInfo, categoryName) {
 let currentProduct = null;
 let currentQty = 1;
 
-function openProductModal(name, price, description, image, sizes, restaurant) {
+function openProductModal(name, price, description, image, sizes, restaurant, restaurante_id) {
   currentProduct = { 
     name, 
     description, 
     image, 
     basePrice: Number(price),
     sizes: typeof sizes === 'string' ? JSON.parse(sizes.replace(/&quot;/g, '"')) : sizes,
-    restaurant: restaurant
+    restaurant: restaurant,
+    restaurante_id: restaurante_id  // ← Guardar ID del restaurante
   };
   currentQty = 1;
 
@@ -268,7 +269,8 @@ function addFromModal() {
             total: total,
             notes: notes,
             image: currentProduct.image,
-            restaurant: currentProduct.restaurant || 'Restaurante'
+            restaurant: currentProduct.restaurant || 'Restaurante',
+            restaurante_id: currentProduct.restaurante_id  // ← Pasar ID del restaurante
         });
     } else {
         console.error('carrito.js no está cargado correctamente');

@@ -35,6 +35,7 @@ export const registerCliente = async (req, res) => {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // 2. Insertar en tabla 'usuarios' con rol 'cliente'
+    // NOTA: Clientes NO necesitan estado 'pendiente', usan email validation de Supabase Auth
     const { error: userError } = await supabase
       .from('usuarios')
       .insert([{
@@ -115,10 +116,18 @@ export const registerRestaurante = async (req, res) => {
 
     console.log('📝 Registrando restaurante:', { email, nombre, tipoComida });
 
+    // ✅ VALIDAR que se proporcionó contraseña
+    if (!password || password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'La contraseña debe tener al menos 6 caracteres' 
+      });
+    }
+
     // 1. Crear usuario en Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
-      password: password || 'tempPassword123',
+      password: password, // ← Usar contraseña del usuario
       options: {
         data: {
           nombre,
@@ -140,12 +149,13 @@ export const registerRestaurante = async (req, res) => {
     // ✅ DELAY MINIMO
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    // 2. Insertar en tabla 'usuarios'
+    // 2. Insertar en tabla 'usuarios' con estado 'activo' (sin esperar admin)
     const { error: userError } = await supabase
       .from('usuarios')
       .insert([{
         id: authData.user.id,
-        rol: 'restaurante'
+        rol: 'restaurante',
+        estado: 'activo'  // ← Directo a activo, sin esperar admin
       }]);
 
     if (userError) {
@@ -184,15 +194,17 @@ export const registerRestaurante = async (req, res) => {
 
     console.log('✅ Restaurante registrado exitosamente:', authData.user.id);
 
-    // ✅ MODIFICACIÓN: Incluir session si está disponible
     const response = {
       success: true,
-      message: 'Registro exitoso. Por favor verifica tu email.',
+      message: 'Restaurante registrado exitosamente. Por favor confirma tu email para iniciar sesión.',
       user: {
         id: authData.user.id,
         email: authData.user.email,
-        // ... tus datos específicos según restaurante/repartidor
-        rol: 'restaurante' // o 'repartidor'
+        nombre: nombre || '',
+        telefono: telefono || '',
+        direccion: direccion || '',
+        tipoComida: tipoComida || 'Otros',
+        rol: 'restaurante'
       }
     };
 
@@ -225,10 +237,18 @@ export const registerRepartidor = async (req, res) => {
 
     console.log('📝 Registrando repartidor:', { email, nombre, vehiculo });
 
+    // ✅ VALIDAR que se proporcionó contraseña
+    if (!password || password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'La contraseña debe tener al menos 6 caracteres' 
+      });
+    }
+
     // 1. Crear usuario en Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
-      password: password || 'tempPassword123',
+      password: password, // ← Usar la contraseña del usuario
       options: {
         data: {
           nombre,
@@ -249,12 +269,13 @@ export const registerRepartidor = async (req, res) => {
     // ✅ DELAY MINIMO
     await new Promise(resolve => setTimeout(resolve, 1200));
 
-    // 2. Insertar en tabla 'usuarios'
+    // 2. Insertar en tabla 'usuarios' con estado 'activo' (sin esperar admin)
     const { error: userError } = await supabase
       .from('usuarios')
       .insert([{
         id: authData.user.id,
-        rol: 'repartidor'
+        rol: 'repartidor',
+        estado: 'activo'  // ← Directo a activo, sin esperar admin
       }]);
 
     if (userError) {
@@ -286,18 +307,16 @@ export const registerRepartidor = async (req, res) => {
 
     console.log('✅ Repartidor registrado exitosamente:', authData.user.id);
 
-    // ✅ MODIFICACIÓN: Incluir session si está disponible
-    // ✅ MODIFICACIÓN: Incluir session si está disponible
     const response = {
       success: true,
-      message: 'Registro exitoso. Por favor verifica tu email.',
+      message: 'Repartidor registrado exitosamente. Tu cuenta será activada automáticamente en 3 minutos.',
       user: {
         id: authData.user.id,
         email: authData.user.email,
         nombre: nombre || '',
         telefono: telefono || '',
         tipo_vehiculo: vehiculo || 'Bicicleta',
-        rol: 'repartidor' // ← ✅ AQUÍ EL CAMBIO
+        rol: 'repartidor'
       }
     };
 
@@ -338,6 +357,16 @@ export const login = async (req, res) => {
 
     if (authError) {
       console.error('❌ Error de autenticación:', authError);
+      
+      // Detectar si el error es por email no confirmado
+      if (authError.code === 'email_not_confirmed') {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Aún no confirmas el correo. Revisa tu bandeja de entrada.',
+          code: 'email_not_confirmed'
+        });
+      }
+      
       return res.status(401).json({ 
         success: false, 
         error: 'Credenciales incorrectas' 

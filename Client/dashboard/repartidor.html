@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Cuenta - DeliveryApp</title>
+    <title>Dashboard Repartidor - RapiRush</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../assets/css/styles.css">
@@ -12,8 +12,8 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold text-warning" href="index.html">
-              <h3>🚚 DeliveryApp</h3>
+            <a class="navbar-brand fw-bold text-warning" href="../index.html">
+              <h3>🚚 RapiRush</h3>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -25,39 +25,127 @@
                     <li class="nav-item">
                         <a class="nav-link" href="../index.html">Inicio</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../restaurantes.html">Restaurantes</a>
-                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle fs-5"></i>
-                            <span id="userName">Usuario</span>
+                            <span id="userName">Repartidor</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item active" href="cliente.html">Mi cuenta</a></li>
-                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">Editar perfil</a></li>
-                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
                         </ul>
                     </li>
-                    <li><a class="dropdown-item mx-3" href="#" onclick="logout()">Cerrar sesión</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-        <div class="container my-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card shadow">
-                    <div class="card-body text-center p-5">
-                        <i class="bi bi-bicycle text-primary" style="font-size: 4rem;"></i>
-                        <h2 class="mt-3">¡Solicitud Recibida!</h2>
-                        <p class="text-muted">Tu solicitud de repartidor ha sido enviada exitosamente.</p>
-                        <p class="text-muted">Te contactaremos pronto para activar tu cuenta.</p>
-                        <div class="mt-4">
-                            <a href="../index.html" class="btn btn-primary">Volver al Inicio</a>
-                            <a href="../auth/login.html" class="btn btn-outline-secondary">Iniciar Sesión</a>
+    <div class="container my-4">
+        <div class="row">
+            <!-- Título -->
+             <div class="row mb-4">
+                <div class="col-8">
+                    <h2 class="mb-4">🚴 Dashboard Repartidor</h2>
+                    <div id="alertContainer"></div>
+                </div>
+                <div class="col-4">
+                <div class="card border-left border-primary">
+                <div class="card-body">
+                    <h5 class="text-muted">
+                    Ganancia Hoy 
+                    <span class="text-primary fs-4 ms-2"> S/.</span>
+                    <span id="gananciaCount" class="text-primary fs-4">0.00</span>
+                    </h5>
+                </div>
+                </div>
+
+                </div>
+            </div>
+            <!-- Estadísticas -->
+            <div class="col-md-4 mb-4">
+                <div class="card border-left border-success">
+                    <div class="card-body">
+                        <h6 class="text-muted">Listos para Recoger</h6>
+                        <h3 class="text-success" id="listosCount">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="card border-left border-warning">
+                    <div class="card-body">
+                        <h6 class="text-muted"> En Camino</h6>
+                        <h3 class="text-warning" id="encaminoCount">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card border-left border-info">
+                    <div class="card-body">
+                        <h6 class="text-muted">Entregados Hoy</h6>
+                        <h3 class="text-info" id="entregadosCount">0</h3>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Tabs de Pedidos -->
+            <div class="col-12">
+                <ul class="nav nav-tabs mb-4" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="listos-tab" data-bs-toggle="tab" data-bs-target="#listos" type="button" role="tab">
+                            ✨ Listos para Recoger <span id="listosTabCount" class="badge bg-success ms-2">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="encamino-tab" data-bs-toggle="tab" data-bs-target="#encamino" type="button" role="tab">
+                            🚴 En Camino <span id="encaminoTabCount" class="badge bg-warning ms-2">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="entregados-tab" data-bs-toggle="tab" data-bs-target="#entregados" type="button" role="tab">
+                            ✅ Entregados <span id="entregadosTabCount" class="badge bg-info ms-2">0</span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Listos -->
+                    <div class="tab-pane fade show active" id="listos" role="tabpanel">
+                        <div id="listosContainer" class="row">
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p>No hay pedidos listos para recoger</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- En Camino -->
+                    <div class="tab-pane fade" id="encamino" role="tabpanel">
+                        <div id="encaminoContainer" class="row">
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p>No hay pedidos en camino</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Llegados -->
+                    <div class="tab-pane fade" id="llegados" role="tabpanel">
+                    <div id="llegadosContainer" class="row">
+                        <div class="col-12 text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p>No hay pedidos llegados</p>
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- Entregados -->
+                    <div class="tab-pane fade" id="entregados" role="tabpanel">
+                        <div id="entregadosContainer" class="row">
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p>No hay pedidos entregados hoy</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -65,89 +153,339 @@
         </div>
     </div>
 
-
-<!-- Modal de Editar Perfil -->
-    <div class="modal fade" id="profileModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Modal Detalles Pedido -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Editar perfil</h5>
+                    <h5 class="modal-title">📦 Detalles del Pedido</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form>
-                        <div class="mb-3">
-                            <label class="form-label">Nombre completo</label>
-                            <input type="text" class="form-control" value="Juan Pérez">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" value="juan@email.com">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="tel" class="form-control" value="+51 999 999 999">
-                        </div>
-                    </form>
+                <div class="modal-body" id="orderDetailBody">
+                    <!-- Contenido dinámico -->
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary">Guardar cambios</button>
+                <div class="modal-footer" id="orderDetailFooter">
+                    <!-- Botones dinámicos -->
                 </div>
             </div>
         </div>
     </div>
 
-    
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-     <script src="../assets/js/api/rapiRushAPI.js"></script>
-<script>
-    // ✅ VERIFICACIÓN MODERNA DE SESIÓN
-    const userRole = sessionStorage.getItem('user_role');
-    const userId = sessionStorage.getItem('user_id');
-    
-    console.log('🔍 Verificando sesión en repartidor.html:', { userRole, userId });
+    <script src="../assets/js/api/rapiRushAPI.js"></script>
+    <script src="../assets/js/api/cache.js"></script>
+    <script>
+        // Variables globales - DECLARAR ANTES
+        let repartidorId;
+        let repartidorName;
+        let userRole;
+        let allOrders = [];
+        let lastErrorTime = 0; // Para evitar mostrar el mismo error múltiples veces
 
-    if (!userRole || !userId || userRole !== 'repartidor') {
-        console.log('❌ No autorizado, redirigiendo a login...');
-        window.location.href = '../auth/login.html';
-        return;
-    }
-
-    console.log('✅ Sesión válida, mostrando dashboard repartidor');
-
-    // ✅ CARGAR INFORMACIÓN MODERNA
-    function loadUserInfo() {
-        const userName = sessionStorage.getItem('user_name');
-        const userEmail = sessionStorage.getItem('user_email');
-        
-        // Mostrar nombre del usuario
-        const userNameElement = document.getElementById('userName');
-        if (userNameElement) {
-            userNameElement.textContent = userName || 'Repartidor';
-        }
-    }
-
-    // ✅ CERRAR SESIÓN MODERNA
-    function logout() {
-        if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-            // Limpiar sessionStorage
-            sessionStorage.removeItem('user_role');
-            sessionStorage.removeItem('user_id');
-            sessionStorage.removeItem('user_name');
-            sessionStorage.removeItem('user_email');
+        // ✅ ESPERAR A QUE EL DOM ESTÉ LISTO ANTES DE VERIFICAR
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('📋 repartidor.html - DOMContentLoaded iniciado');
             
-            // Limpiar localStorage si es necesario
-            localStorage.removeItem('user_email');
+            // ✅ ESPERAR a que authManager esté listo
+            if (window.authManager && typeof window.authManager.isReady === 'function') {
+                await window.authManager.isReady();
+                console.log('✅ authManager está listo');
+            }
             
-            window.location.href = '../auth/login.html';
-        }
-    }
+            console.log('🔍 sessionStorage actual:', {
+                user_id: sessionStorage.getItem('user_id'),
+                user_name: sessionStorage.getItem('user_name'),
+                user_role: sessionStorage.getItem('user_role')
+            });
 
-    // Cargar al iniciar
-    loadUserInfo();
-</script>
-    <script src="../assets/js/authManager.js"></script>
+            repartidorId = sessionStorage.getItem('user_id');
+            repartidorName = sessionStorage.getItem('user_name');
+            userRole = sessionStorage.getItem('user_role');
+
+            console.log('📍 Valores extraídos:', {
+                repartidorId,
+                repartidorName,
+                userRole
+            });
+
+            // Verificar autenticación - AHORA DENTRO DE DOMContentLoaded
+            if (!repartidorId || userRole !== 'repartidor') {
+                console.error('❌ Autenticación fallida. Redirigiendo a login...');
+                console.error({
+                    repartidorId_exists: !!repartidorId,
+                    userRole_matches: userRole === 'repartidor'
+                });
+                window.location.href = '../auth/login.html';
+                return; // ✅ IMPORTANTE: Detener ejecución del resto del script
+            }
+
+            console.log('✅ Autenticación verificada. Repartidor ID:', repartidorId);
+            document.getElementById('userName').textContent = repartidorName || 'Repartidor';
+
+            // Cargar pedidos del repartidor
+            loadOrders();
+        });
+
+        // Cargar pedidos disponibles
+        async function loadOrders() {
+            try {
+                // Obtener token
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                // Obtener todos los pedidos "listo" para que el repartidor pueda asignarse
+                    const response = await fetch(`http://localhost:3000/api/orders/repartidor/${repartidorId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                    });
+
+                
+                if (!response.ok) {
+                    // Si no existe endpoint, intentar obtener los propios pedidos del repartidor
+                    await loadMyOrders();
+                    return;
+                }
+                
+                const data = await response.json();
+                allOrders = data.orders || [];
+                console.log('📦 Pedidos disponibles:', allOrders);
+                
+                renderOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                // Fallback: cargar solo los propios pedidos
+                await loadMyOrders();
+            }
+        }
+
+        // Cargar pedidos asignados al repartidor
+        async function loadMyOrders() {
+            try {
+                // Obtener token
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                const response = await fetch('http://localhost:3000/api/orders/repartidor/' + repartidorId, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) throw new Error('Error al cargar pedidos');
+                
+                const data = await response.json();
+                allOrders = data.orders || [];
+                console.log('📦 Mis pedidos:', allOrders);
+                
+                renderOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                
+                // ✅ Solo mostrar el error si hace más de 30 segundos que no se muestra
+                const now = Date.now();
+                if (now - lastErrorTime > 30000) {
+                    showAlert('Error al cargar pedidos: ' + error.message, 'danger');
+                    lastErrorTime = now;
+                }
+            }
+        }
+
+        // Renderizar pedidos por estado
+        function renderOrders() {
+            const listos = allOrders.filter(o => o.status === 'listo' || o.estado === 'listo');
+            const encamino = allOrders.filter(o => o.status === 'en camino' || o.estado === 'en camino');
+            const entregados = allOrders.filter(o => o.status === 'entregado' || o.estado === 'entregado' || o.status === 'llegado' || o.estado === 'llegado');
+
+            // Actualizar contadores
+            document.getElementById('listosCount').textContent = listos.length;
+            document.getElementById('listosTabCount').textContent = listos.length;
+            document.getElementById('encaminoCount').textContent = encamino.length;
+            document.getElementById('encaminoTabCount').textContent = encamino.length;
+            document.getElementById('entregadosCount').textContent = entregados.length;
+            document.getElementById('entregadosTabCount').textContent = entregados.length;
+
+            // Calcular ganancia
+            const ganancia = (listos.concat(encamino).concat(entregados).reduce((sum, o) => sum + (o.total || 0), 0)) * 0.1; // 10% comisión
+            document.getElementById('gananciaCount').textContent = ganancia.toFixed(2);
+
+            // Renderizar cada grupo
+            renderOrderGroup('listosContainer', listos, 'listo');
+            renderOrderGroup('encaminoContainer', encamino, 'encamino');
+            renderOrderGroup('entregadosContainer', entregados, 'entregado');
+        }
+
+        function renderOrderGroup(containerId, orders, status) {
+            const container = document.getElementById(containerId);
+            
+            if (orders.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12 text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p>No hay pedidos en estado: ${status}</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = orders.map(order => `
+                <div class="col-md-6 mb-4">
+                    <div class="card border-left border-info">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <strong>Pedido #${order.id.toString().slice(-6)}</strong>
+                                <span class="badge bg-info">${order.status || order.estado}</span>
+                            </h6>
+                            <p class="mb-2"><strong>Cliente:</strong> ${order.cliente_nombre || 'N/A'}</p>
+                            <p class="mb-2"><strong>Dirección:</strong> ${order.delivery_address || order.direccion_entrega || 'N/A'}</p>
+                            <p class="mb-2"><strong>Teléfono:</strong> ${order.cliente_telefono || 'N/A'}</p>
+                            <p class="mb-3"><strong>Total:</strong> S/. ${(order.total || 0).toFixed(2)}</p>
+                            <button class="btn btn-sm btn-info" onclick="showOrderDetail(${order.id})">
+                                Ver Detalles
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Mostrar detalles del pedido
+        async function showOrderDetail(orderId) {
+            try {
+                const response = await fetch('http://localhost:3000/api/orders/' + orderId);
+                if (!response.ok) throw new Error('Error al cargar detalles');
+                
+                const order = await response.json();
+                const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+                
+                // Renderizar detalles
+                const detailBody = document.getElementById('orderDetailBody');
+                let html = `
+                    <div class="mb-3">
+                        <h6 class="text-primary">📋 Información del Pedido</h6>
+                        <p class="mb-1"><strong>Cliente:</strong> ${order.cliente_nombre || 'N/A'}</p>
+                        <p class="mb-1"><strong>Teléfono:</strong> ${order.cliente_telefono || 'N/A'}</p>
+                        <p class="mb-3"><strong>Estado:</strong> <span class="badge bg-info">${order.status || order.estado}</span></p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-primary">🏠 Entrega</h6>
+                        <p class="mb-1"><strong>Dirección:</strong> ${order.delivery_address || order.direccion_entrega || 'N/A'}</p>
+                        <p class="mb-1"><strong>Distrito:</strong> ${order.district || order.distrito_entrega || 'N/A'}</p>
+                        ${order.referencia_entrega ? `<p class="mb-1"><strong>🔑 Referencia:</strong> ${order.referencia_entrega}</p>` : ''}
+                        ${order.nota_repartidor ? `<p class="mb-3"><strong>📝 Nota del Cliente:</strong> <em>"${order.nota_repartidor}"</em></p>` : ''}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-primary">📦 Items</h6>
+                        <div class="list-group">`;
+                
+                // Agregar items
+                if (order.items && Array.isArray(order.items)) {
+                    order.items.forEach(item => {
+                        html += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-0">${item.name || item.nombre_item}</h6>
+                                        <small class="text-muted">${item.quantity || item.cantidad}x</small>
+                                    </div>
+                                    <span class="fw-bold">S/. ${((item.price || item.precio) * (item.quantity || item.cantidad)).toFixed(2)}</span>
+                                </div>
+                            </div>`;
+                    });
+                }
+                
+                html += `</div></div><div class="mb-3"><strong>Total:</strong> S/. ${(order.total || 0).toFixed(2)}</div>`;
+                
+                detailBody.innerHTML = html;
+
+                // Renderizar botones de acción
+                const footer = document.getElementById('orderDetailFooter');
+                footer.innerHTML = '';
+
+                const status = (order.status || order.estado || '').toLowerCase();
+
+                if (status === 'listo') {
+                    footer.innerHTML += `
+                        <button type="button" class="btn btn-warning" onclick="updateOrderStatus(${orderId}, 'en_camino')">
+                            🚴 Recoger Pedido
+                        </button>`;
+                } else if (status === 'en_camino' || status === 'en camino') {
+                    footer.innerHTML += `
+                        <button type="button" class="btn btn-success" onclick="updateOrderStatus(${orderId}, 'llegado')">
+                            📍 Confirmar Llegada
+                        </button>`;
+                }
+
+                footer.innerHTML += `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>`;
+
+                modal.show();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        // Actualizar estado del pedido
+        async function updateOrderStatus(orderId, newStatus) {
+            if (!confirm(`¿Cambiar estado a "${newStatus}"?`)) return;
+
+            try {
+                const token = localStorage.getItem('supabaseAuthToken');
+                console.log(`🚀 Actualizando orden ${orderId} a estado: ${newStatus}`);
+                console.log(`📍 URL: http://localhost:3000/api/orders/${orderId}/status`);
+                console.log(`📦 Body:`, { estado: newStatus });
+                
+                const response = await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ estado: newStatus })
+                });
+
+                console.log(`📊 Response status: ${response.status}`);
+                const data = await response.json();
+                console.log(`📊 Response data:`, data);
+
+                if (!response.ok) throw new Error(data.error || 'Error al actualizar');
+
+                showAlert(`✅ Pedido actualizado a: ${newStatus}`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+                
+                // Recargar pedidos
+                await loadMyOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alertDiv);
+
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        function logout() {
+            if (confirm('¿Cerrar sesión?')) {
+                sessionStorage.clear();
+                localStorage.removeItem('user_email');
+                window.location.href = '../auth/login.html';
+            }
+        }
+
+        // Cargar pedidos al iniciar
+        loadMyOrders();
+        // Recargar cada 10 segundos
+        setInterval(loadMyOrders, 10000);
+    </script>
 </body>
 </html>

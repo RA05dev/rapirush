@@ -7,11 +7,28 @@ let currentUser = null;
 
 // Al cargar la página
 document.addEventListener('DOMContentLoaded', function () {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        updateUserDisplay();
+    console.log('🚀 Iniciando dashboard admin...');
+    
+    // ✅ USAR authManager en lugar de localStorage directo
+    if (!window.authManager || !authManager.isLoggedIn()) {
+        console.log('❌ No hay sesión en authManager, redirigiendo...');
+        window.location.href = '../auth/login.html';
+        return;
     }
+
+    const user = authManager.getCurrentUser();
+    
+    // ✅ VERIFICAR que sea admin
+    if (user.role !== 'admin') {
+        console.log(`❌ Rol incorrecto: ${user.role}, redirigiendo...`);
+        window.location.href = authManager.getDashboardUrl();
+        return;
+    }
+
+    console.log('✅ Sesión válida, mostrando dashboard admin');
+
+    currentUser = user;
+    updateUserDisplay();
 
     // Inicializar panel
     initializeAdmin();
@@ -90,7 +107,7 @@ function showSection(sectionName) {
 function logout() {
     if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
         localStorage.removeItem('currentUser');
-        window.location.href = '../Client/auth/login.html';
+        window.location.href = '../auth/login.html';
     }
 }
 

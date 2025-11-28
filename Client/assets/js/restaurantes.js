@@ -124,13 +124,32 @@ function renderRestaurantsList(data, containerId, showPopular = false) {
 // Obtener todos los restaurantes desde la API (con cache)
 async function fetchAllRestaurants() {
   try {
-    // ✅ USAR CACHE SI YA TENEMOS LOS DATOS
+    // ✅ ASEGURAR que cacheManager está disponible
+    // Esperar máximo 1 segundo a que cache.js se cargue
+    let cacheReady = window.cacheManager;
+    let waitTime = 0;
+    while (!cacheReady && waitTime < 1000) {
+      await new Promise(r => setTimeout(r, 50));
+      cacheReady = window.cacheManager;
+      waitTime += 50;
+    }
+
+    // ✅ PRIMERO: Intentar obtener del caché mejorado
+    if (window.cacheManager) {
+      const cached = window.cacheManager.getRestaurants();
+      if (cached) {
+        console.log('📦 Restaurantes obtenidos del CACHÉ (sin llamada a BD)');
+        return cached;
+      }
+    }
+
+    // ✅ SEGUNDO: Usar caché local si existe
     if (cachedRestaurants) {
-      console.log('📋 Usando restaurantes en cache');
+      console.log('📋 Usando restaurantes en cache local');
       return cachedRestaurants;
     }
 
-    console.log('📤 Obteniendo restaurantes desde API...');
+    console.log('📤 Obteniendo restaurantes desde API (primera carga)...');
     console.time('⏱️ API Restaurantes');
     
     const response = await fetch('http://localhost:3000/api/restaurants');
@@ -147,8 +166,11 @@ async function fetchAllRestaurants() {
 
     console.log(`📥 Restaurantes obtenidos: ${result.data?.length || 0}`);
     
-    // ✅ GUARDAR EN CACHE
+    // ✅ GUARDAR EN AMBOS CACHES
     cachedRestaurants = result.data || [];
+    if (window.cacheManager) {
+      window.cacheManager.setRestaurants(cachedRestaurants);
+    }
     return cachedRestaurants;
 
   } catch (error) {

@@ -52,8 +52,8 @@ function redirectToLogin() {
     // Guardar la página actual para regresar después del login
     sessionStorage.setItem('redirectAfterLogin', 'checkout.html');
     
-    // ✅ RUTA CORRECTA desde checkout.html al login
-    window.location.href = 'auth/login.html';
+    // ✅ RUTA CORRECTA: checkout.html está en Client/, auth está en Client/auth/
+    window.location.href = '../auth/login.html';
 }
 function prefillUserData(user) {
     console.log('📝 Prellenando datos del usuario...');
@@ -77,10 +77,19 @@ function setupEventListeners() {
     document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const cardSection = document.getElementById('card-details-section');
+            const qrSection = document.getElementById('digital-qr-section');
+            
             if (this.value === 'card') {
                 cardSection.style.display = 'block';
+                if (qrSection) qrSection.style.display = 'none';
+            } else if (this.value === 'digital') {
+                cardSection.style.display = 'none';
+                if (qrSection) qrSection.style.display = 'block';
+                // Generar QR cuando se selecciona
+                generatePaymentQR();
             } else {
                 cardSection.style.display = 'none';
+                if (qrSection) qrSection.style.display = 'none';
             }
         });
     });
@@ -210,32 +219,21 @@ async function confirmOrder() {
         const notes = document.getElementById('notes').value;
         const reference = document.getElementById('reference').value;
 
-        // Agregar notas como item adicional si existen
-        const cartConNotas = [...cart];
-        if (notes || reference) {
-            let notaTexto = '';
-            if (notes) notaTexto += `Notas: ${notes}`;
-            if (reference) notaTexto += (notaTexto ? ' | ' : '') + `Referencia: ${reference}`;
-            
-            cartConNotas.push({
-                name: '📝 Información adicional',
-                price: 0,
-                quantity: 1,
-                notes: notaTexto,
-                restaurant: 'Sistema'
-            });
-        }
+        // ✅ NO agregar notas como item - se envían por separado al backend
+        const cartSinNotas = [...cart];
 
         const orderData = {
-            items: cartConNotas,
+            items: cartSinNotas,
             subtotal: subtotal,
             delivery: deliveryFee,
             discount: discount,
             total: total,
-            address: direccionCompleta,  // ← Dirección completa (calle + distrito)
+            address: direccionCompleta,
             phone: document.getElementById('phone').value,
-            customerName: customerName,  // ← Solo nombres (ya es campo completo)
-            paymentMethod: paymentMethod
+            customerName: customerName,
+            paymentMethod: paymentMethod,
+            notes: notes,              // ← Se envía directamente las notas
+            reference: reference       // ← Se envía directamente la referencia
         };
 
         console.log('📦 Enviando pedido a servidor...', orderData);
@@ -291,5 +289,80 @@ async function confirmOrder() {
         // Restaurar botón
         confirmBtn.innerHTML = originalText;
         confirmBtn.disabled = false;
+    }
+}
+
+// ✅ FUNCIÓN PARA GENERAR QR DE PAGO
+function generatePaymentQR() {
+    try {
+        const qrContainer = document.getElementById('qr-code');
+        
+        if (!qrContainer) {
+            console.warn('⚠️ Contenedor de QR no encontrado en el DOM');
+            return;
+        }
+
+        // ✅ VERIFICAR que QRCode library esté disponible
+        if (typeof QRCode === 'undefined') {
+            console.error('❌ QRCode.js no está cargado');
+            qrContainer.innerHTML = '<p class="alert alert-danger">Error: No se pudo cargar la librería de QR</p>';
+            return;
+        }
+
+        // Limpiar QR anterior completamente
+        qrContainer.innerHTML = '';
+
+        // Obtener total del pedido
+        const totalEl = document.getElementById('summary-total');
+        const total = totalEl ? parseFloat(totalEl.textContent.replace('S/. ', '').trim()) : 100;
+
+        // ✅ GENERAR REFERENCIA ÚNICA
+        const reference = `RAPIRUST-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        
+        // Datos para el QR (formato simplificado para Yape/Plin)
+        const qrData = `https://rapiRush.pe/pay?amount=${total}&reference=${reference}`;
+
+        console.log('📱 Generando QR para:', { qrData, total, reference });
+
+        // ✅ GENERAR CÓDIGO QR CON PARÁMETROS EXPLÍCITOS
+        const qrInstance = new QRCode(qrContainer, {
+            text: qrData,
+            width: 250,
+            height: 250,
+            colorDark: "#000000",
+            colorLight: "#FFFFFF",
+            correctLevel: QRCode.CorrectLevel.H,
+            useSVG: false
+        });
+
+        // ✅ VERIFICAR que el QR se generó correctamente
+        if (qrContainer.children.length === 0) {
+            console.warn('⚠️ QRCode no generó elemento visible');
+            qrContainer.innerHTML += '<p class="alert alert-warning">Error al generar QR, intente seleccionar otro método</p>';
+        } else {
+            console.log('✅ QR generado exitosamente');
+        }
+
+    } catch (error) {
+        console.error('❌ Error generando QR:', error);
+        const qrContainer = document.getElementById('qr-code');
+        if (qrContainer) {
+            qrContainer.innerHTML = `<p class="alert alert-danger">Error al generar QR: ${error.message}</p>`;
+        }
+    }
+}
+
+// Función auxiliar para obtener total
+function getOrderTotal() {
+    try {
+        const totalEl = document.getElementById('summary-total');
+        if (totalEl) {
+            const totalText = totalEl.textContent.replace('S/. ', '').trim();
+            return parseFloat(totalText) || 0;
+        }
+        return 0;
+    } catch (error) {
+        console.error('Error obteniendo total:', error);
+        return 0;
     }
 }

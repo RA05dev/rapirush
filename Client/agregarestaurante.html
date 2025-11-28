@@ -22,8 +22,11 @@
         </div>
     </nav>
 
+    <div class="container">
+      <h1 class="fw-bold mb-3">Formulario para socios - Restaurantes</h1>
+    </div> 
   <main class="container my-4">
-    <h1>Registro para socios - Restaurantes</h1>
+
     <form id="rest-reg-form" class="mt-3">
       <div class="mb-3">
         <label class="form-label">Nombre del restaurante</label>
@@ -67,7 +70,12 @@
             <option>Otros</option>
           </select>
       </div>
-      <button class="btn btn-primary" type="submit">Enviar Solicitud</button>
+      <div class="mb-3">
+        <label class="form-label">URL Imagen del Restaurante <small class="text-muted">(opcional)</small></label>
+        <input class="form-control" id="rest-image-url" type="url" placeholder="https://ejemplo.com/imagen.jpg">
+        <small class="text-muted">Ingresa la URL de la imagen de tu restaurante</small>
+      </div>
+      <button class="btn btn-primary " type="submit">Enviar Solicitud</button>
     </form>
   </main>
 
