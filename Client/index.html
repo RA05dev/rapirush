@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚚 RapiRush - Pide lo que quieras</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    
+</head>
+<body>
+
+
+    <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <div class="nav-item dropdown ms-start me-auto m-3">
+                <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown">☰</a>
+                <ul class="dropdown-menu" style="min-width: 260px;">
+                    <li class="dropdown-item px-3">
+                        <div class="d-flex justify-content-start gap-2 ">
+                            <a href="auth/register.html" class="btn btn-outline-primary btn-sm">Registrarse</a>
+                            <a href="auth/login.html" class="btn btn-outline-primary btn-sm">Iniciar Sesion</a>
+                        </div>
+                    </li>
+                    <li><a class="dropdown-item" href="restaurantes.html"><i class="bi bi-shop-window"></i> Restaurantes</a></li>
+                    <li><a class="dropdown-item" href="agregarestaurante.html"><i class="bi bi-shop-window"></i> Registra tu restaurante</a></li>
+                    <li><a class="dropdown-item" href="serepartidor.html"><i class="bi bi-bicycle"></i> Sé repartidor</a></li>
+                </ul>
+            </div>
+            <a class="navbar-brand fw-bold text-warning px-3" href="index.html">
+              <h3>🚚 RapiRush</h3>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Inicio</a>
+                    </li>
+                    <li class="nav-item px-2">
+                        <a class="nav-link" href="restaurantes.html">Restaurantes</a>
+                    </li>
+                    <li class="nav-item dropdown px-2">
+                        <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle fs-4 mx-2"></i><span id="nav-username">Hola</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="auth/login.html">Ingresar</a></li>
+                            <li><a class="dropdown-item" href="auth/register.html">Registrarse</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item ">
+                        <a class="nav-link position-relative active" href="carrito.html">
+                            <i class="bi bi-cart3 fs-4"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count">
+                                0
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    
+
+    
+
+
+  <main>
+    <!-- Hero Section con Buscador -->
+    <section class="hero-section bg-light" id="categorias">
+      <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-3">¿Qué se te antoja hoy?</h1>
+        <p class="hero-subtitle mb-4">Descubre sabores increíbles y recibe tu pedido en la puerta de tu casa</p><br></br>
+
+        <!-- Buscador -->
+        <div class="search-section">
+          <div class="search-bar mb-3 d-flex justify-content-center">
+            <input type="text" id="searchInput" placeholder="Buscar restaurantes o comida..." class="search-input me-2">
+            <button class="search-btn btn btn-primary mx-2 mt-2" id="searchButton">🔍</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORÍAS -->
+    <section class="categories-section py-4">
+      <div class="section-header text-center">
+        <h2 class="section-title">Categorías</h2>
+        <p class="section-subtitle">Explora nuestra selección de sabores cuidadosamente organizados</p>
+      </div>
+
+      <!-- Scroll horizontal en móviles -->
+      <div class="container px-3">
+        <div class="d-flex flex-row flex-nowrap overflow-auto gap-2" id="categoryButtons">
+
+          <!-- Pollo a la brasa -->
+          <button class="category-card text-center p-3 rounded bg-white shadow-sm category-chicken" data-category="Pollo">
+            <div class="category-icon text-danger">
+              <i class="ri-restaurant-fill"></i>
+              <i class="ri-restaurant-line"></i>
+            </div>
+            <p class="mb-0 mt-2 fw-semibold">Pollo a la brasa</p>
+          </button>
+
+          <!-- Pizza -->
+          <button class="category-card text-center p-3 rounded bg-white shadow-sm category-pizza" data-category="pizza">
+            <div class="category-icon">
+              <i class="ri-pie-chart-fill"></i>
+              <i class="ri-pie-chart-line"></i>
+            </div>
+            <p class="mb-0 mt-2 fw-semibold">Pizza</p>
+          </button>
+
+          <!-- Hamburguesas -->
+          <button class="category-card text-center p-3 rounded bg-white shadow-sm category-burger" data-category="hamburguesa">
+            <div class="category-icon text-warning">
+              <i class="ri-restaurant-2-fill"></i>
+              <i class="ri-restaurant-2-line"></i>
+            </div>
+            <p class="mb-0 mt-2 fw-semibold">Hamburguesas</p>
+          </button>
+
+          <!-- Sushi -->
+          <button class="category-card text-center p-3 rounded bg-white shadow-sm category-sushi" data-category="sushi">
+            <div class="category-icon text-danger">
+              <i class="ri-restaurant-2-fill"></i>
+              <i class="ri-restaurant-2-line"></i>
+            </div>
+            <p class="mb-0 mt-2 fw-semibold">Sushi</p>
+          </button>
+
+          <!-- Postres -->
+          <button class="category-card text-center p-3 rounded bg-white shadow-sm category-dessert" data-category="Postres">
+            <div class="category-icon text-pink">
+              <i class="ri-cake-3-fill"></i>
+              <i class="ri-cake-3-line"></i>
+            </div>
+            <p class="mb-0 mt-2 fw-semibold">Postres</p>
+          </button>
+
+          <!-- Mexicana -->
+          <button class="category-card text-center p-3 rounded bg-white shadow-sm category-mexican" data-category="mexican">
+            <div class="category-icon text-success">
+              <i class="ri-restaurant-2-fill"></i>
+              <i class="ri-restaurant-2-line"></i>
+            </div>
+            <p class="mb-0 mt-2 fw-semibold">Mexicana</p>
+          </button>
+
+          <!-- Italiana -->
+          <button class="category-card text-center p-3 rounded bg-white shadow-sm category-italian" data-category="italian">
+            <div class="category-icon">
+              <i class="ri-restaurant-fill"></i>
+              <i class="ri-restaurant-line"></i>
+            </div>
+            <p class="mb-0 mt-2 fw-semibold">Italiana</p>
+          </button>
+
+          <!-- China -->
+          <button class="category-card text-center p-3 rounded bg-white shadow-sm category-chinese" data-category="Comida china">
+            <div class="category-icon text-secondary">
+              <i class="ri-restaurant-fill"></i>
+              <i class="ri-restaurant-line"></i>
+            </div>
+            <p class="mb-0 mt-2 fw-semibold">China</p>
+          </button>
+
+          <!-- Más -->
+          <button class="category-card text-center p-3 rounded bg-white shadow-sm category-more" data-category="mas">
+            <div class="category-icon">
+              <i class="ri-apps-fill"></i>
+              <i class="ri-apps-line"></i>
+            </div>
+            <p class="mb-0 mt-2 fw-semibold">Más</p>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Contenedor de resultados -->
+      <div class="container mt-4 section-body">
+        <div class="row" id="resultsContainer">
+          <!-- Aquí se mostrarán los resultados del buscador y filtros -->
+        </div>
+      </div>
+    </section>
+
+
+      <!-- Restaurantes Populares -->
+      <section class="restaurants-section py-5">
+          <div class="container">
+              <section class="container my-5">
+                  <div class="section-header">
+                      <h2 class="section-title">Los Favoritos de la Ciudad</h2>
+                      <p class="section-subtitle">Los restaurantes más queridos por nuestros clientes</p>
+                  </div>
+                  <div class="row" id="restaurantes-populares"></div>
+              </section>
+
+
+              <div class="text-center mt-4">
+                  <a href="restaurantes.html" class="btn btn-outline-primary btn-lg">
+                      Ver todos los restaurantes <i class="bi bi-arrow-right"></i>
+                  </a>
+              </div>
+          </div>
+      </section>
+  </main>
+
+  <footer class="bg-dark text-white py-4 mt-5">
+      <div class="container">
+          <div class="row">
+              <div class="col-md-4 mb-3">
+                  <h5>RapiRush</h5>
+                  <p class="small">Tu comida favorita, a la puerta de tu casa.</p>
+              </div>
+              <div class="col-md-4 mb-3">
+                  <h6>Enlaces</h6>
+                  <ul class="list-unstyled small">
+                      <li><a href="#" class="text-white-50">Acerca de</a></li>
+                      <li><a href="#" class="text-white-50">Términos y condiciones</a></li>
+                      <li><a href="#" class="text-white-50">Políticas de privacidad</a></li>
+                  </ul>
+              </div>
+              <div class="col-md-4 mb-3">
+                  <h6>Contacto</h6>
+                  <p class="small mb-0">Email: soporte@RapiRush.com</p>
+                  <p class="small">Tel: +51 123 456 789</p>
+              </div>
+          </div>
+          <div class="text-center small mt-3">© 2025 RapiRush. Todos los derechos reservados.</div>
+      </div>
+  </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- ✅ ORDEN CORRECTO (igual que carrito.html) -->
+<script src="assets/js/api/rapiRushAPI.js"></script>
+<script src="assets/js/authManager.js"></script>
+<script src="assets/js/restaurantes.js"></script> 
+<script src="assets/js/main.js"></script>
+<script src="assets/js/index.js"></script>
+<script src="assets/js/carrito.js"></script>        
+
+</body>
+</html>

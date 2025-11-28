@@ -1,0 +1,71 @@
+RapiRush/
+│
+├── client/                                   # ⭐ FRONTEND (HTML, CSS, JS)
+│   ├── index.html
+│   ├── restaurantes.html
+│   ├── carrito.html
+│   ├── checkout.html
+│   ├── agregarestaurante.html
+│   ├── serepartidor.html
+│   ├── restaurante.html
+│   │
+│   ├── auth/
+│   │   ├── login.html
+│   │   └── register.html
+│   │
+│   ├── dashboard/
+│   │   ├── cliente.html
+│   │   ├── repartidor.html
+│   │   ├── restaurante.html
+│   │   └── admin.html
+│   │
+│   ├── assets/
+│       ├── css/
+│       │   └── styles.css
+│       ├── js/
+│       │   ├── api/
+│       │   │   └── rapiRushAPI.js           # 🔥 Único archivo que llama al backend
+│       │   ├── admin.js
+│       │   ├── agregarestaurante.js
+│       │   ├── authManager.js
+│       │   ├── carrito.js
+│       │   ├── checkout.js
+│       │   ├── cliente.js
+│       │   ├── index.js
+│       │   ├── login.js
+│       │   ├── main.js
+│       │   ├── register.js
+│       │   ├── restaurantData.js
+│       │   ├── restaurantes.js
+│       │   ├── repartidor.js
+│       ├── img/
+│       └── icons/
+│
+├── server/                          # BACKEND (Node + Express)
+│   ├── index.js                     # Punto de entrada del servidor
+│   ├── package.json
+│   ├── .env                    # variables
+│   ├── src/
+│      ├── config/
+│      │   └── supabaseClient.js    # Cliente Supabase con keys seguras
+│      │
+│      ├── controllers/
+│      │       ├── authController.js
+│      │       ├── restaurantController.js
+│      │       ├── orderController.js
+│      │       └── userController.js
+│      │      
+│      ├── middleware/
+│      │   ├── authMiddleware.js    # Valida JWT de Supabase Y # Validación de roles
+│      │    verifyEmail.js
+│      │
+│      ├── routes/
+│          ├── authRoutes.js        # Rutas de login/registro
+│          ├── restaurantRoutes.js  # Rutas de restaurantes
+│          ├── orderRoutes.js       # Rutas de pedidos
+│          └── userRoutes.js        # Rutas de perfil y roles
+│      
+│
+└── README.md                                 # Documentación general del proyecto
+
+

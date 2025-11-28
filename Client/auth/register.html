@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrarse - RapiRush</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body class="bg-register">
+
+<!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <div class="nav-item dropdown ms-start me-auto m-3">
+                <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown">☰</a>
+                <ul class="dropdown-menu" style="min-width: 260px;">
+                    <li class="dropdown-item px-3">
+                        <div class="d-flex justify-content-start gap-2 ">
+                            <a href="../auth/register.html" class="btn btn-outline-primary btn-sm">Registrarse</a>
+                            <a href="../auth/login.html" class="btn btn-outline-primary btn-sm">Iniciar Sesion</a>
+                        </div>
+                    </li>
+                    <li><a class="dropdown-item" href="../restaurantes.html"><i class="bi bi-shop-window"></i> Restaurantes</a></li>
+                    <li><a class="dropdown-item" href="../agregarestaurante.html"><i class="bi bi-shop-window"></i> Registra tu restaurante</a></li>
+                    <li><a class="dropdown-item" href="../serepartidor.html"><i class="bi bi-bicycle"></i> Sé repartidor</a></li>
+                </ul>
+            </div>
+            <a class="navbar-brand fw-bold text-warning px-3" href="../index.html">
+              <h3>🚚 RapiRush</h3>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../index.html">Inicio</a>
+                    </li>
+                    <li class="nav-item px-2">
+                        <a class="nav-link" href="../restaurantes.html">Restaurantes</a>
+                    </li>
+                    <li class="nav-item dropdown px-2">
+                        <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle fs-4 mx-2"></i><span id="nav-username">Hola</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="../auth/login.html">Ingresar</a></li>
+                            <li><a class="dropdown-item" href="../auth/register.html">Registrarse</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item ">
+                        <a class="nav-link position-relative active" href="../carrito.html">
+                            <i class="bi bi-cart3 fs-4"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count">
+                                0
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+                
+    <div class="container">
+            <!-- Formulario de registro -->
+            <div class="container">
+                <div class="row justify-content-center align-items-center min-vh-100 py-2">
+                    <div class="col-md-6 col-lg-5">
+                        <div class="card shadow border-0">
+                            <div class="card-body px-5 py-2">
+                                <!-- Header -->
+                                <div class="text-center mb-4">
+                                    <div class="-">
+                                        <i class="bi bi-person-plus-fill text-primary" style="font-size: 4rem;"></i>
+                                    </div>
+                                    <h3 class="fw-bold">Crear cuenta</h3>
+                                    <p class="text-muted">Únete a RapiRush</p>
+                                </div>
+
+                                <!-- Formulario -->
+                                <form id="registerForm">
+                                    <!-- Nombre completo -->
+                                    <div class="mb-3">
+                                        <label for="fullName" class="form-label">Nombre completo *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="bi bi-person"></i>
+                                            </span>
+                                            <input type="text" class="form-control" id="fullName" 
+                                                placeholder="Juan Pérez" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Email -->
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Correo electrónico *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="bi bi-envelope"></i>
+                                            </span>
+                                            <input type="email" class="form-control" id="email" 
+                                                placeholder="tu@email.com" required>
+                                        </div>
+                                        <small class="text-muted">Usaremos este correo para tu cuenta</small>
+                                    </div>
+
+                                    <!-- Teléfono -->
+                                    <div class="mb-3">
+                                        <label for="phone" class="form-label">Teléfono *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="bi bi-phone"></i>
+                                            </span>
+                                            <input type="tel" class="form-control" id="phone" 
+                                                placeholder="999 999 999" required maxlength="9">
+                                        </div>
+                                    </div>
+
+                                    <!-- Contraseña -->
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">Contraseña *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="bi bi-lock"></i>
+                                            </span>
+                                            <input type="password" class="form-control" id="password" 
+                                                placeholder="••••••••" required minlength="6">
+                                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                                <i class="bi bi-eye" id="toggleIcon"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Mínimo 6 caracteres</small>
+                                    </div>
+
+
+                                    <!-- Confirmar contraseña -->
+                                    <div class="mb-3">
+                                        <label for="confirmPassword" class="form-label">Confirmar contraseña *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="bi bi-lock-fill"></i>
+                                            </span>
+                                            <input type="password" class="form-control" id="confirmPassword" 
+                                                placeholder="••••••••" required minlength="6">
+                                            <!-- ✅ AGREGAR ESTE BOTÓN QUE FALTA -->
+                                            <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                                <i class="bi bi-eye" id="toggleConfirmIcon"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Dirección -->
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label">Dirección</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="bi bi-geo-alt"></i>
+                                            </span>
+                                            <input type="text" class="form-control" id="address" 
+                                            placeholder="Av. Principal 123, Miraflores">
+                                        </div>
+                                    </div>
+
+                                    <!-- Términos y condiciones -->
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="terms" required>
+                                        <label class="form-check-label small" for="terms">
+                                            Acepto los <a href="#" class="text-primary">Términos y Condiciones</a> 
+                                            y la <a href="#" class="text-primary">Política de Privacidad</a>
+                                        </label>
+                                    </div>
+
+                                    <!-- Recibir promociones -->
+                                    <div class="mb-4 form-check">
+                                        <input type="checkbox" class="form-check-input" id="promotions" checked>
+                                        <label class="form-check-label small" for="promotions">
+                                            Deseo recibir promociones y ofertas especiales
+                                        </label>
+                                    </div>
+
+                                    <!-- Botón registrar -->
+                                    <div class="d-grid mb-3">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="bi bi-person-check"></i> Crear cuenta
+                                        </button>
+                                    </div>
+
+                                    <!-- Divisor -->
+                                    <div class="text-center mb-3">
+                                        <span class="text-muted small">o regístrate con</span>
+                                    </div>
+
+                                    <!-- Registro con redes sociales -->
+                                    <div class="row mb-3">
+                                        <div class="col-6 col-md-6">
+                                            <button type="button" class="btn btn-outline-danger w-100">
+                                                <i class="bi bi-google"></i> Google
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-md-6">
+                                            <button type="button" class="btn btn-outline-primary w-100">
+                                                <i class="bi bi-facebook"></i> Facebook
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <hr>
+
+                                    <!-- Link a login -->
+                                    <div class="text-center">
+                                        <p class="text-muted small mb-0">
+                                            ¿Ya tienes cuenta? 
+                                            <a href="login.html" class="text-primary fw-bold">Inicia sesión</a>
+                                        </p>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+    </div>
+                    <!-- Opciones adicionales -->
+                <div class=" text-center my-4">
+                    <p class="text-muted small mb-2">¿Eres socio comercial?</p>
+                    <div class="btn-group" role="group">
+                        <a href="../agregarestaurante.html" class="btn btn-outline-info btn-sm text-white">
+                            <i class="bi bi-shop-window"></i> Registrar restaurante
+                        </a>
+                        <a href="../serepartidor.html" class="btn btn-outline-success btn-sm text-white">
+                            <i class="bi bi-bicycle"></i> Ser repartidor
+                        </a>
+                    </div>
+                </div>
+
+    <!-- AL FINAL DEL ARCHIVO register.html -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/api/rapiRushAPI.js"></script>
+    <script src="../assets/js/authManager.js"></script>
+    <script src="../assets/js/register.js"></script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+-- ==================================================
+-- SCRIPT DE MIGRACIÓN CORREGIDO (IDs automáticos para sizes)
+-- ==================================================
+
+-- 1. PRODUCTOS PARA "LA PIZZERÍA ITALIANA" (ID: 10000000-0000-0000-0000-000000000001)
+INSERT INTO productos (id, restaurante_id, categoria, nombre, descripcion, base_price, image, rating, reviews, icon) VALUES
+-- Pizzas
+('10000001-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Pizzas', 'Pizza Margherita', 'Salsa de tomate, mozzarella fresca, albahaca y aceite de oliva extra virgen', 25.00, 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?ixlib=rb-4.0.3', 4.9, 320, 'bi bi-pizza'),
+('10000001-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'Pizzas', 'Pizza Pepperoni', 'Salsa de tomate, mozzarella y abundante pepperoni premium', 28.00, 'https://images.unsplash.com/photo-1628840042765-356cda07504e?ixlib=rb-4.0.3', 4.8, 280, 'bi bi-pizza'),
+('10000001-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001', 'Pizzas', 'Pizza Hawaiana', 'Salsa de tomate, mozzarella, jamón y piña caramelizada', 27.00, 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-4.0.3', 4.7, 240, 'bi bi-pizza'),
+('10000001-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000001', 'Pizzas', 'Pizza 4 Quesos', 'Mozzarella, gorgonzola, parmesano y provolone', 30.00, 'https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-4.0.3', 4.8, 260, 'bi bi-pizza'),
+
+-- Bebidas
+('10000001-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000001', 'Bebidas', 'Coca Cola', 'Bebida gaseosa refrescante', 5.00, 'https://images.unsplash.com/photo-1554866585-cd94860890b7?ixlib=rb-4.0.3', 4.9, 180, 'bi bi-cup-straw'),
+('10000001-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000001', 'Bebidas', 'Inca Kola', 'Bebida gaseosa peruana', 5.00, 'https://www.wanta.pe/Multimedia/productos/twitter/INCA_KOLA_SIN_AZUCAR_1_5_L_202404101741494232.PNG', 4.9, 160, 'bi bi-cup-straw'),
+('10000001-0000-0000-0000-000000000007', '10000000-0000-0000-0000-000000000001', 'Bebidas', 'Agua San Luis', 'Agua mineral sin gas', 3.00, 'https://kyotorolls.com/cdn/shop/products/AguaSanLuis500ml.png?v=1674193335', 4.8, 120, 'bi bi-cup-straw'),
+('10000001-0000-0000-0000-000000000008', '10000000-0000-0000-0000-000000000001', 'Bebidas', 'Sprite', 'Gaseosa sabor lima limón', 5.00, 'https://ams3.digitaloceanspaces.com/graffica/2022/05/Sprite-Dieline-can-reg-1024x614.jpeg', 4.7, 150, 'bi bi-cup-straw'),
+
+-- Complementos
+('10000001-0000-0000-0000-000000000009', '10000000-0000-0000-0000-000000000001', 'Complementos', 'Pan al Ajo con Queso', 'Pan artesanal con mantequilla de ajo, mozzarella gratinada y hierbas italianas', 12.00, 'https://storage.googleapis.com/avena-recipes-v2/2019/10/1571783574005.jpeg', 4.8, 150, 'bi bi-basket-fill'),
+('10000001-0000-0000-0000-000000000010', '10000000-0000-0000-0000-000000000001', 'Complementos', 'Palitos de Mozzarella', 'Bastones de queso mozzarella empanizados con salsa marinara', 15.00, 'https://lambweston.scene7.com/is/image/lambweston/30429_LW-Suprema-Mozzarella-Sticks-Parchment?$ProductImage$', 4.9, 180, 'bi bi-basket-fill'),
+('10000001-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000001', 'Complementos', 'Rollos de Pepperoni', 'Rollos de masa rellenos de pepperoni y queso, con aderezo ranch', 16.00, 'https://www.papajohns.com.pe/media/catalog/product/s/o/sol_6639_2.png?optimize=medium&bg-color=255,255,255&fit=bounds&height=700&width=700&canvas=700:700&format=jpeg', 4.7, 160, 'bi bi-basket-fill');
+
+-- TAMAÑOS PARA PIZZERÍA ITALIANA (IDs AUTOMÁTICOS)
+INSERT INTO producto_sizes (producto_id, size, price) VALUES
+-- Pizza Margherita
+('10000001-0000-0000-0000-000000000001', 'personal', 25.00),
+('10000001-0000-0000-0000-000000000001', 'mediano', 39.00),
+('10000001-0000-0000-0000-000000000001', 'familiar', 49.00),
+
+-- Pizza Pepperoni
+('10000001-0000-0000-0000-000000000002', 'personal', 28.00),
+('10000001-0000-0000-0000-000000000002', 'mediano', 42.00),
+('10000001-0000-0000-0000-000000000002', 'familiar', 52.00),
+
+-- Pizza Hawaiana
+('10000001-0000-0000-0000-000000000003', 'personal', 27.00),
+('10000001-0000-0000-0000-000000000003', 'mediano', 41.00),
+('10000001-0000-0000-0000-000000000003', 'familiar', 51.00),
+
+-- Pizza 4 Quesos
+('10000001-0000-0000-0000-000000000004', 'personal', 30.00),
+('10000001-0000-0000-0000-000000000004', 'mediano', 44.00),
+('10000001-0000-0000-0000-000000000004', 'familiar', 54.00),
+
+-- Bebidas (tamaños)
+('10000001-0000-0000-0000-000000000005', '500ml', 5.00),
+('10000001-0000-0000-0000-000000000005', '1L', 8.00),
+('10000001-0000-0000-0000-000000000005', '1.5L', 12.00),
+
+('10000001-0000-0000-0000-000000000006', '500ml', 5.00),
+('10000001-0000-0000-0000-000000000006', '1L', 8.00),
+('10000001-0000-0000-0000-000000000006', '1.5L', 12.00),
+
+('10000001-0000-0000-0000-000000000007', '500ml', 3.00),
+('10000001-0000-0000-0000-000000000007', '1L', 5.00),
+('10000001-0000-0000-0000-000000000007', '2.5L', 8.00),
+
+('10000001-0000-0000-0000-000000000008', '500ml', 5.00),
+('10000001-0000-0000-0000-000000000008', '1L', 8.00),
+('10000001-0000-0000-0000-000000000008', '1.5L', 12.00),
+
+-- Complementos (tamaños)
+('10000001-0000-0000-0000-000000000009', '4 piezas', 12.00),
+('10000001-0000-0000-0000-000000000009', '8 piezas', 20.00),
+('10000001-0000-0000-0000-000000000009', '12 piezas', 28.00),
+
+('10000001-0000-0000-0000-000000000010', '6 piezas', 15.00),
+('10000001-0000-0000-0000-000000000010', '10 piezas', 22.00),
+('10000001-0000-0000-0000-000000000010', '15 piezas', 30.00),
+
+('10000001-0000-0000-0000-000000000011', '6 piezas', 16.00),
+('10000001-0000-0000-0000-000000000011', '12 piezas', 28.00),
+('10000001-0000-0000-0000-000000000011', '18 piezas', 38.00);
+
+-- 2. PRODUCTOS PARA "BURGER HOUSE" (ID: 20000000-0000-0000-0000-000000000002)
+INSERT INTO productos (id, restaurante_id, categoria, nombre, descripcion, base_price, image, rating, reviews, icon) VALUES
+-- Hamburguesas
+('20000001-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002', 'Hamburguesas', 'Classic Burger', 'Carne 100% de res, queso cheddar, lechuga, tomate y salsa especial', 22.00, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3', 4.8, 280, 'bi bi-burger'),
+('20000001-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'Hamburguesas', 'BBQ Bacon Burger', 'Carne de res, tocino crujiente, queso, aros de cebolla y salsa BBQ', 25.00, 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?ixlib=rb-4.0.3', 4.9, 320, 'bi bi-burger'),
+('20000001-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', 'Hamburguesas', 'Mushroom Swiss', 'Carne de res, champiñones salteados, queso suizo y mayonesa de ajo', 24.00, 'https://images.unsplash.com/photo-1586816001966-79b736744398?ixlib=rb-4.0.3', 4.7, 250, 'bi bi-burger'),
+('20000001-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', 'Hamburguesas', 'Veggie Deluxe', 'Hamburguesa de garbanzos y quinoa, aguacate, rúcula y alioli', 20.00, 'https://images.unsplash.com/photo-1525059696034-4967a8e1dca2?ixlib=rb-4.0.3', 4.6, 180, 'bi bi-burger'),
+
+-- Complementos
+('20000001-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000002', 'Complementos', 'Papas Fritas', 'Papas crujientes con sal marina', 8.00, 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?ixlib=rb-4.0.3', 4.8, 220, 'bi bi-box'),
+('20000001-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000002', 'Complementos', 'Aros de Cebolla', 'Aros de cebolla empanizados con salsa ranch', 10.00, 'https://images.unsplash.com/photo-1639024471283-03518883512d?ixlib=rb-4.0.3', 4.7, 180, 'bi bi-box'),
+('20000001-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000002', 'Complementos', 'Chicken Wings', 'Alitas de pollo en salsa BBQ o Buffalo', 15.00, 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?ixlib=rb-4.0.3', 4.9, 240, 'bi bi-box'),
+
+-- Bebidas
+('20000001-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000002', 'Bebidas', 'Coca Cola', 'Bebida gaseosa refrescante', 5.00, 'https://images.unsplash.com/photo-1554866585-cd94860890b7?ixlib=rb-4.0.3', 4.8, 150, 'bi bi-cup-straw'),
+('20000001-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000002', 'Bebidas', 'Milkshake', 'Batido cremoso (Chocolate, Vainilla o Fresa)', 12.00, 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?ixlib=rb-4.0.3', 4.9, 180, 'bi bi-cup-straw');
+
+-- TAMAÑOS PARA BURGER HOUSE (IDs AUTOMÁTICOS)
+INSERT INTO producto_sizes (producto_id, size, price) VALUES
+-- Hamburguesas
+('20000001-0000-0000-0000-000000000001', 'simple', 22.00),
+('20000001-0000-0000-0000-000000000001', 'doble', 32.00),
+('20000001-0000-0000-0000-000000000001', 'triple', 42.00),
+
+('20000001-0000-0000-0000-000000000002', 'simple', 25.00),
+('20000001-0000-0000-0000-000000000002', 'doble', 35.00),
+('20000001-0000-0000-0000-000000000002', 'triple', 45.00),
+
+('20000001-0000-0000-0000-000000000003', 'simple', 24.00),
+('20000001-0000-0000-0000-000000000003', 'doble', 34.00),
+('20000001-0000-0000-0000-000000000003', 'triple', 44.00),
+
+('20000001-0000-0000-0000-000000000004', 'simple', 20.00),
+('20000001-0000-0000-0000-000000000004', 'doble', 30.00),
+
+-- Complementos
+('20000001-0000-0000-0000-000000000005', 'regular', 8.00),
+('20000001-0000-0000-0000-000000000005', 'grande', 12.00),
+('20000001-0000-0000-0000-000000000005', 'familiar', 15.00),
+
+('20000001-0000-0000-0000-000000000006', 'regular', 10.00),
+('20000001-0000-0000-0000-000000000006', 'grande', 14.00),
+('20000001-0000-0000-0000-000000000006', 'familiar', 18.00),
+
+('20000001-0000-0000-0000-000000000007', '6 piezas', 15.00),
+('20000001-0000-0000-0000-000000000007', '12 piezas', 28.00),
+('20000001-0000-0000-0000-000000000007', '18 piezas', 40.00),
+
+-- Bebidas
+('20000001-0000-0000-0000-000000000008', '500ml', 5.00),
+('20000001-0000-0000-0000-000000000008', '1L', 8.00),
+('20000001-0000-0000-0000-000000000008', '1.5L', 12.00),
+
+('20000001-0000-0000-0000-000000000009', 'regular', 12.00),
+('20000001-0000-0000-0000-000000000009', 'grande', 15.00);
+
+
+

@@ -1,0 +1,133 @@
+-- 1. Tabla de usuarios (roles)
+CREATE TABLE usuarios (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    rol VARCHAR(20) NOT NULL CHECK (rol IN ('cliente', 'restaurante', 'repartidor', 'admin'))
+);
+
+-- 2. Tabla de clientes
+CREATE TABLE clientes (
+    id UUID PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    nombres VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20) NOT NULL,
+    direccion VARCHAR(200) NOT NULL
+);
+
+-- 3. Tabla de restaurantes 
+CREATE TABLE restaurantes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  
+    usuario_id UUID REFERENCES usuarios(id),        
+    nombre VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20) NOT NULL,
+    direccion VARCHAR(200) NOT NULL,
+    etiquetas VARCHAR(100) NOT NULL,
+    abierto BOOLEAN DEFAULT TRUE,
+    tiempo_delivery INT DEFAULT 30,
+    descripcion TEXT,
+    rating NUMERIC(3,2) DEFAULT 5.0,
+    reviews INTEGER DEFAULT 0,
+    delivery_cost NUMERIC(10,2) DEFAULT 0,
+    image_url TEXT
+);
+
+-- 4. Tabla de productos  
+CREATE TABLE productos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    restaurante_id UUID REFERENCES restaurantes(id) ON DELETE CASCADE,
+    categoria VARCHAR(50) NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    base_price NUMERIC(10,2) NOT NULL,
+    image TEXT,
+    rating NUMERIC(3,2) DEFAULT 5.0,
+    reviews INTEGER DEFAULT 0,
+    icon VARCHAR(50)
+);
+
+-- 5. Tabla de tamaños de productos
+CREATE TABLE producto_sizes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    producto_id UUID REFERENCES productos(id) ON DELETE CASCADE,
+    size VARCHAR(50) NOT NULL,
+    price NUMERIC(10,2) NOT NULL
+);
+
+-- 6. Tabla de repartidores
+CREATE TABLE repartidores (
+    id UUID PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    nombre VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20) NOT NULL,
+    tipo_vehiculo VARCHAR(20) NOT NULL
+);
+
+-- 7. Tabla de pedidos
+CREATE TABLE pedidos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cliente_id UUID REFERENCES usuarios(id),
+    restaurante_id UUID REFERENCES restaurantes(id),
+    repartidor_id UUID REFERENCES repartidores(id),
+    -- Totales
+    total NUMERIC(10,2) NOT NULL,
+    subtotal NUMERIC(10,2) NOT NULL,
+    delivery_fee NUMERIC(10,2) DEFAULT 0,
+    descuento NUMERIC(10,2) DEFAULT 0,
+    --estado
+    estado VARCHAR(20) CHECK (estado IN ('pendiente','recibido', 'aceptado', 'preparando', 'camino', 'llegado', 'entregado', 'cancelado')) DEFAULT 'pendiente',
+     -- Información de entrega (obligatorios)
+    direccion_entrega TEXT NOT NULL,
+    distrito_entrega VARCHAR(100) NOT NULL,
+    telefono_contacto VARCHAR(20) NOT NULL,
+    -- Notas y referencias (OPCIONALES)
+    nota_repartidor TEXT, -- ✅ OPCIONAL: Nota general para el repartidor
+    referencia_entrega TEXT, -- ✅ OPCIONAL: Referencia del lugar
+    
+    -- Información de pago
+    metodo_pago VARCHAR(20) NOT NULL,
+    
+    -- Auditoría
+    creado_en TIMESTAMP DEFAULT NOW(),
+    actualizado_en TIMESTAMP DEFAULT NOW()
+);
+
+-- 8. Tabla de detalles del pedido
+CREATE TABLE pedido_detalle (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pedido_id UUID REFERENCES pedidos(id) ON DELETE CASCADE,
+     -- Información del producto
+    producto_id UUID REFERENCES productos(id) ON DELETE SET NULL,
+    producto_size_id UUID REFERENCES producto_sizes(id) ON DELETE SET NULL,
+    
+    -- Detalles del item
+    nombre_item VARCHAR(100) NOT NULL,
+    cantidad INT NOT NULL,
+    precio NUMERIC(10,2) NOT NULL,
+    
+    -- Nota por producto (OPCIONAL)
+    nota_producto TEXT -- ✅ OPCIONAL: Nota específica para este producto
+);
+
+-- 9. Tabla de rastreo de pedidos
+CREATE TABLE pedido_rastreo (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pedido_id UUID REFERENCES pedidos(id) ON DELETE CASCADE,
+    estado VARCHAR(20) NOT NULL,
+    mensaje TEXT NOT NULL,
+    fecha TIMESTAMP DEFAULT NOW()
+);
+
+
+
+
+⭐ TU BASE DE DATOS FINAL (REPASO)
+Tabla	Para qué sirve
+auth.users	Usuarios y contraseñas (Supabase Auth)
+usuarios	Guarda el rol
+clientes	Datos del formulario cliente
+restaurantes	Datos del formulario restaurante
+repartidores	Datos del formulario repartidor
+pedidos	El pedido principal
+pedido_items	Los items del pedido
+pedido_rastreo	Estados de seguimiento del pedido
+
+
+
+
