@@ -51,6 +51,11 @@
             <div class="col-12">
                 <ul class="nav nav-tabs mb-4" role="tablist">
                     <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="recibidos-tab" data-bs-toggle="tab" data-bs-target="#recibidos" type="button" role="tab">
+                            📥 Nuevos <span id="recibidosCount" class="badge bg-info ms-2">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
                         <button class="nav-link" id="aceptados-tab" data-bs-toggle="tab" data-bs-target="#aceptados" type="button" role="tab">
                             ✅ Aceptados <span id="aceptadosCount" class="badge bg-success ms-2">0</span>
                         </button>
@@ -61,7 +66,7 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="listos-tab" data-bs-toggle="tab" data-bs-target="#listos" type="button" role="tab">
+                        <button class="nav-link" id="listos-tab" data-bs-toggle="tab" data-bs-target="#listos" type="button" role="tab">
                             📋 Listos <span id="listosCount" class="badge bg-danger ms-2">0</span>
                         </button>
                     </li>
@@ -70,11 +75,26 @@
                             📦 Mis Productos
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="perfil-tab" data-bs-toggle="tab" data-bs-target="#perfil" type="button" role="tab">
+                            ⚙️ Perfil
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content">
+                    <!-- Recibidos (NEW) -->
+                    <div class="tab-pane fade show active" id="recibidos" role="tabpanel">
+                        <div id="recibidosContainer" class="row">
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p>No hay pedidos nuevos</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- listos -->
-                    <div class="tab-pane fade show active" id="listos" role="tabpanel">
+                    <div class="tab-pane fade" id="listos" role="tabpanel">
                         <div id="listosContainer" class="row">
                             <div class="col-12 text-center text-muted py-5">
                                 <i class="bi bi-inbox fs-1"></i>
@@ -115,6 +135,62 @@
                                 <div class="text-center text-muted py-5">
                                     <i class="bi bi-inbox fs-1"></i>
                                     <p>No hay productos cargados</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Perfil -->
+                    <div class="tab-pane fade" id="perfil" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-8 mx-auto">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="bi bi-pencil-square"></i> Editar Perfil del Restaurante</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="perfilForm" onsubmit="guardarPerfilRestaurante(event)">
+                                            <div class="mb-3">
+                                                <label class="form-label">Nombre del Restaurante</label>
+                                                <input type="text" class="form-control" id="perfilNombre" required>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Descripción</label>
+                                                <textarea class="form-control" id="perfilDescripcion" rows="3"></textarea>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Foto del Restaurante (URL)</label>
+                                                <input type="url" class="form-control" id="perfilImagen">
+                                                <small class="text-muted">Puedes usar URLs de Unsplash o de otro servicio</small>
+                                            </div>
+
+                                            <div class="mb-3" id="previewImagenDiv">
+                                                <label class="form-label">Vista Previa</label>
+                                                <img id="previewImagen" src="" alt="Preview" class="img-fluid rounded" style="max-height: 200px; display: none;">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Dirección</label>
+                                                <input type="text" class="form-control" id="perfilDireccion">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Teléfono</label>
+                                                <input type="tel" class="form-control" id="perfilTelefono">
+                                            </div>
+
+                                            <div class="d-flex gap-2">
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="bi bi-check-lg"></i> Guardar Cambios
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" onclick="cargarPerfilRestaurante()">
+                                                    <i class="bi bi-arrow-clockwise"></i> Recargar
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -164,12 +240,18 @@
                             <label class="form-label">Categoría *</label>
                             <select class="form-control" id="productCategory" required>
                                 <option value="">Selecciona una categoría</option>
+                                <option value="Pollo">Pollo</option>
                                 <option value="Pizzas">Pizzas</option>
                                 <option value="Hamburguesas">Hamburguesas</option>
+                                <option value="Sushi">Sushi</option>
+                                <option value="Pasteles">Pasteles</option> 
+                                <option value="Postres">Postres/option> 
+                                <option value="Mexicana">Mexicana</option>
+                                <option value="Italiana">Italiana</option>
+                                <option value="China">China</option>
                                 <option value="Bebidas">Bebidas</option>
                                 <option value="Complementos">Complementos</option>
-                                <option value="Pasteles">Pasteles</option>
-                                <option value="Otros">Otros</option>
+                                <option value="Mas">Otros</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -193,6 +275,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/api/rapiRushAPI.js"></script>
     <script src="../assets/js/api/cache.js"></script>
+    <script src="../assets/js/authManager.js"></script>
     <script>
         // Variables globales
         let restauranteOrders = [];
@@ -211,42 +294,56 @@
                 console.log('✅ authManager está listo');
             }
             
-            // ✅ PEQUEÑO DELAY PARA ASEGURAR QUE sessionStorage ESTÉ SINCRONIZADO
+            // ✅ PEQUEÑO DELAY PARA ASEGURAR QUE authManager ESTÉ SINCRONIZADO
             setTimeout(() => {
-                console.log('🔍 sessionStorage actual:', {
-                    user_id: sessionStorage.getItem('user_id'),
-                    user_name: sessionStorage.getItem('user_name'),
-                    user_role: sessionStorage.getItem('user_role'),
-                    user_email: sessionStorage.getItem('user_email')
-                });
+                console.log('🔍 DEBUG: Iniciando obtención de usuario...');
                 
-                console.log('💾 localStorage actual:', {
-                    supabaseAuthToken: !!localStorage.getItem('supabaseAuthToken'),
-                    currentUser: !!localStorage.getItem('currentUser')
-                });
+                // ✅ USAR authManager.getCurrentUser() - MÁS SEGURO
+                let currentUser = window.authManager?.getCurrentUser();
+                console.log('🔍 currentUser desde authManager:', currentUser);
+                
+            // ✅ FALLBACK: Si no hay currentUser en authManager, intentar desde localStorage
+            if (!currentUser || !currentUser.restaurante_id) {
+                console.warn('⚠️ restaurante_id no disponible en authManager, intentando desde storage...');
+                const storedRestauranteId = localStorage.getItem('restaurante_id');
+                const storedUserId = localStorage.getItem('user_id');
+                const storedUserName = localStorage.getItem('user_name');
+                const storedUserRole = localStorage.getItem('user_role');
+                
+                console.log('📦 Storage values:', { storedRestauranteId, storedUserId, storedUserName, storedUserRole });
+                
+                if (storedRestauranteId || currentUser?.restaurante_id) {
+                        currentUser = {
+                            id: storedUserId || currentUser?.id,
+                            restaurante_id: storedRestauranteId || currentUser?.restaurante_id,
+                            nombre: storedUserName || currentUser?.nombre || 'Restaurante',
+                            rol: storedUserRole || currentUser?.rol || 'restaurante'
+                        };
+                        console.log('✅ Usuario recuperado desde storage:', currentUser);
+                    }
+                }
+                
+                // Extraer datos del usuario autenticado
+                restauranteId = currentUser?.restaurante_id || currentUser?.id;
+                restauranteName = currentUser?.nombre;
+                userRole = currentUser?.rol;
 
-                restauranteId = sessionStorage.getItem('user_id');
-                restauranteName = sessionStorage.getItem('user_name');
-                userRole = sessionStorage.getItem('user_role');
-
-                console.log('📍 Valores extraídos:', {
+                console.log('📍 Valores del authManager:', {
                     restauranteId,
                     restauranteName,
                     userRole
                 });
 
-                // Verificar autenticación - AHORA DENTRO DE DOMContentLoaded
+                // Verificar autenticación
                 if (!restauranteId || userRole !== 'restaurante') {
-                    console.error('❌ Autenticación fallida. Redirigiendo a login...');
+                    console.error('❌ Autenticación fallida. No hay restaurante_id válido.');
                     console.error('Detalles:', {
-                        restauranteId_exists: !!restauranteId,
-                        restauranteId_value: restauranteId,
+                        currentUser,
                         userRole_value: userRole,
-                        userRole_matches: userRole === 'restaurante',
-                        typeof_userRole: typeof userRole
+                        expected_role: 'restaurante'
                     });
                     window.location.href = '../auth/login.html';
-                    return; // ✅ IMPORTANTE: Detener ejecución del resto del script
+                    return;
                 }
 
                 console.log('✅ Autenticación verificada. Restaurante ID:', restauranteId);
@@ -254,7 +351,7 @@
 
                 // Cargar datos del restaurante
                 loadOrders();
-            }, 100); // 100ms de delay para sincronización
+            }, 500); // 500ms de delay para sincronización completa
         });
 
         // Cargar pedidos del restaurante
@@ -264,11 +361,11 @@
             const token = localStorage.getItem('supabaseAuthToken');
             if (!token) throw new Error('No autenticado');
 
-            const response = await fetch('/api/orders/restaurant/' + restauranteId, {
+            const response = await fetch('http://localhost:3000/api/orders/restaurant/' + restauranteId, {
             headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            console.log('🔎 Status:', response.status);
+            console.log('🔎 Response Status:', response.status);
 
             if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
@@ -278,6 +375,7 @@
             const data = await response.json();
             restauranteOrders = data.orders || [];
             console.log('📦 Pedidos del restaurante:', restauranteOrders);
+            console.log('📊 Total de pedidos:', restauranteOrders.length);
 
             renderOrders();
         } catch (error) {
@@ -288,19 +386,23 @@
 
         // Renderizar pedidos por estado
         function renderOrders() {
+            // ✅ NUEVO: Filtrar por el estado correcto que BDD retorna (status viene del backend)
+            const recibidos = restauranteOrders.filter(o => o.status === 'recibido');
             const aceptados = restauranteOrders.filter(o => o.status === 'aceptado');
             const preparando = restauranteOrders.filter(o => o.status === 'preparando');
             const listos = restauranteOrders.filter(o => o.status === 'listo');
 
             // Actualizar contadores
-            document.getElementById('listosCount').textContent = listos.length;
+            document.getElementById('recibidosCount').textContent = recibidos.length;
             document.getElementById('aceptadosCount').textContent = aceptados.length;
             document.getElementById('preparandoCount').textContent = preparando.length;
+            document.getElementById('listosCount').textContent = listos.length;
 
-            // Renderizar cada grupo
-            renderOrderGroup('listosContainer', listos, 'pendiente');
+            // Renderizar cada grupo - con estado correcto
+            renderOrderGroup('recibidosContainer', recibidos, 'recibido');
             renderOrderGroup('aceptadosContainer', aceptados, 'aceptado');
             renderOrderGroup('preparandoContainer', preparando, 'preparando');
+            renderOrderGroup('listosContainer', listos, 'listo');
         }
 
         function renderOrderGroup(containerId, orders, status) {
@@ -323,7 +425,7 @@
                                 <strong>Pedido #${order.id.toString().slice(-6)}</strong>
                                 <span class="badge ${getStatusBadgeClass(order.status)}">${order.status}</span>
                             </h6>
-                            <p class="mb-2"><strong>Cliente:</strong> ${order.cliente_nombre || 'N/A'}</p>
+                            <p class="mb-2"><strong>Cliente:</strong> ${order.cliente_nombres || 'N/A'}</p>
                             <p class="mb-2"><strong>Dirección:</strong> ${order.delivery_address || 'N/A'}</p>
                             <p class="mb-2"><strong>Total:</strong> S/. ${(order.total || 0).toFixed(2)}</p>
                             <p class="mb-3"><strong>Items:</strong> ${order.item_count || 0} productos</p>
@@ -338,9 +440,10 @@
 
         function getStatusBadgeClass(status) {
             const classes = {
-                'pendiente': 'bg-warning text-dark',
+                'recibido': 'bg-info text-white',
                 'aceptado': 'bg-success',
-                'preparando': 'bg-info'
+                'preparando': 'bg-warning text-dark',
+                'listo': 'bg-danger'
             };
             return classes[status] || 'bg-secondary';
         }
@@ -419,7 +522,7 @@
                 let html = `
                     <div class="mb-3">
                         <h6 class="text-primary">📋 Información del Pedido</h6>
-                        <p class="mb-1"><strong>Cliente:</strong> ${order.cliente_nombre || 'N/A'}</p>
+                        <p class="mb-1"><strong>Cliente:</strong> ${order.cliente_nombres || 'N/A'}</p>
                         <p class="mb-1"><strong>Teléfono:</strong> ${order.cliente_telefono || 'N/A'}</p>
                         <p class="mb-3"><strong>Estado:</strong> <span class="badge ${getStatusBadgeClass(order.status)}">${order.status}</span></p>
                     </div>
@@ -460,12 +563,13 @@
                 const footer = document.getElementById('orderDetailFooter');
                 footer.innerHTML = '';
 
-                if (order.status === 'pendiente') {
+                // ✅ FIXED: Cambié 'pendiente' por 'recibido' (lo que envía el backend)
+                if (order.status === 'recibido') {
                     footer.innerHTML += `
                         <button type="button" class="btn btn-success" onclick="updateOrderStatus(${orderId}, 'aceptado')">
                             ✅ Aceptar Pedido
                         </button>
-                        <button type="button" class="btn btn-danger" onclick="updateOrderStatus(${orderId}, 'rechazado')">
+                        <button type="button" class="btn btn-danger" onclick="updateOrderStatus(${orderId}, 'cancelado')">
                             ❌ Rechazar
                         </button>`;
                 } else if (order.status === 'aceptado') {
@@ -475,7 +579,7 @@
                         </button>`;
                 } else if (order.status === 'preparando') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-info" onclick="updateOrderStatus(${orderId}, 'en_camino')">
+                        <button type="button" class="btn btn-info" onclick="updateOrderStatus(${orderId}, 'listo')">
                             ✨ Marcar Listo para Entrega
                         </button>`;
                 }
@@ -548,11 +652,101 @@
         // Cargar pedidos y productos al iniciar
         loadOrders();
         loadProducts();
-        // Recargar cada 10 segundos
-        setInterval(() => {
-            loadOrders();
-            loadProducts();
-        }, 10000);
+        cargarPerfilRestaurante(); // ← Cargar perfil también
+
+        // ✅ FUNCIONES PARA PERFIL
+        async function cargarPerfilRestaurante() {
+            try {
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                const response = await fetch(`http://localhost:3000/api/restaurants/${restauranteId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar perfil');
+
+                const data = await response.json();
+                const restaurante = data.restaurant || data.data;
+
+                // Llenar formulario
+                document.getElementById('perfilNombre').value = restaurante.nombre || '';
+                document.getElementById('perfilDescripcion').value = restaurante.descripcion || '';
+                document.getElementById('perfilImagen').value = restaurante.image_url || '';
+                document.getElementById('perfilDireccion').value = restaurante.direccion || '';
+                document.getElementById('perfilTelefono').value = restaurante.telefono || '';
+
+                // Mostrar preview de imagen
+                if (restaurante.image_url) {
+                    const previewImg = document.getElementById('previewImagen');
+                    previewImg.src = restaurante.image_url;
+                    previewImg.style.display = 'block';
+                }
+
+                console.log('✅ Perfil cargado:', restaurante);
+            } catch (error) {
+                console.error('❌ Error cargando perfil:', error);
+                showAlert('Error: ' + error.message, 'warning');
+            }
+        }
+
+        async function guardarPerfilRestaurante(event) {
+            event.preventDefault();
+
+            const perfilData = {
+                nombre: document.getElementById('perfilNombre').value.trim(),
+                descripcion: document.getElementById('perfilDescripcion').value.trim(),
+                image_url: document.getElementById('perfilImagen').value.trim(),
+                direccion: document.getElementById('perfilDireccion').value.trim(),
+                telefono: document.getElementById('perfilTelefono').value.trim()
+            };
+
+            try {
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                console.log('📝 Actualizando perfil:', perfilData);
+
+                const response = await fetch(`http://localhost:3000/api/restaurants/${restauranteId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(perfilData)
+                });
+
+                const data = await response.json();
+                console.log('📥 Respuesta:', data);
+
+                if (!response.ok) throw new Error(data.error || 'Error al actualizar perfil');
+
+                showAlert('✅ Perfil actualizado exitosamente', 'success');
+
+                // Actualizar nombre en navbar
+                if (perfilData.nombre) {
+                    document.getElementById('userName').textContent = perfilData.nombre;
+                }
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        // Preview de imagen
+        document.getElementById('perfilImagen')?.addEventListener('change', function() {
+            const url = this.value.trim();
+            if (url) {
+                const previewImg = document.getElementById('previewImagen');
+                previewImg.src = url;
+                previewImg.style.display = 'block';
+                previewImg.onerror = function() {
+                    showAlert('⚠️ URL de imagen no válida', 'warning');
+                    this.style.display = 'none';
+                };
+            }
+        });
 
         // ✅ FUNCIONES PARA PRODUCTOS
         function showAddProductForm() {
@@ -560,16 +754,78 @@
             modal.show();
         }
 
-        function editProduct(productId) {
-            console.log('✏️ Editar producto:', productId);
-            showAlert('Funcionalidad de edición en desarrollo', 'info');
+        let currentProductId = null; // Para editar
+
+        async function editProduct(productId) {
+            try {
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar producto');
+
+                const data = await response.json();
+                const product = data.product || data.data;
+
+                // Llenar modal con datos del producto
+                currentProductId = productId;
+                document.getElementById('productName').value = product.nombre;
+                document.getElementById('productDesc').value = product.descripcion || '';
+                document.getElementById('productCategory').value = product.categoria;
+                document.getElementById('productPrice').value = product.base_price;
+                document.getElementById('productImage').value = product.image_url || '';
+
+                // Cambiar título del modal
+                const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
+                document.querySelector('#addProductModal .modal-title').textContent = '✏️ Editar Producto';
+                
+                // Cambiar botón de submit
+                const submitBtn = document.querySelector('#addProductForm button[type="submit"]');
+                if (submitBtn) submitBtn.textContent = '💾 Guardar Cambios';
+
+                modal.show();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
         }
 
-        function deleteProduct(productId) {
-            if (!confirm('¿Eliminar este producto?')) return;
-            console.log('🗑️ Eliminar producto:', productId);
-            showAlert('Funcionalidad de eliminación en desarrollo', 'info');
+        async function deleteProduct(productId) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+
+            try {
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                console.log('🗑️ Eliminando producto:', productId);
+
+                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+                console.log('📥 Respuesta:', data);
+
+                if (!response.ok) throw new Error(data.error || 'Error al eliminar producto');
+
+                showAlert('✅ Producto eliminado exitosamente', 'success');
+                loadProducts(); // Recargar lista
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
         }
+
+        // Recargar cada 10 segundos
+        setInterval(() => {
+            loadOrders();
+            loadProducts();
+        }, 10000);
 
         async function submitAddProduct() {
             const producto = {
@@ -590,11 +846,22 @@
                 const token = localStorage.getItem('supabaseAuthToken');
                 if (!token) throw new Error('No autenticado');
 
-                console.log('📤 Enviando producto:', producto);
-                console.log('🔐 Token:', token.substring(0, 20) + '...');
+                let response, url, method;
 
-                const response = await fetch('http://localhost:3000/api/products/create', {
-                    method: 'POST',
+                // ✅ Si estamos editando
+                if (currentProductId) {
+                    url = `http://localhost:3000/api/products/${currentProductId}`;
+                    method = 'PUT';
+                    console.log('📝 Actualizando producto:', producto);
+                } else {
+                    // ✅ Si es nuevo
+                    url = 'http://localhost:3000/api/products/create';
+                    method = 'POST';
+                    console.log('📤 Creando nuevo producto:', producto);
+                }
+
+                response = await fetch(url, {
+                    method: method,
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
@@ -606,14 +873,21 @@
                 console.log('📥 Respuesta:', data);
 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Error al crear producto');
+                    throw new Error(data.error || 'Error al guardar producto');
                 }
 
-                showAlert('✅ Producto creado exitosamente', 'success');
+                showAlert(currentProductId ? '✅ Producto actualizado' : '✅ Producto creado', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
                 document.getElementById('addProductForm').reset();
 
-                // Recargar productos (si los implementamos después)
+                // Reset modal
+                currentProductId = null;
+                document.querySelector('#addProductModal .modal-title').textContent = '➕ Agregar Producto';
+                const submitBtn = document.querySelector('#addProductForm button[type="submit"]');
+                if (submitBtn) submitBtn.textContent = '➕ Agregar Producto';
+
+                loadProducts(); // Recargar lista
+
             } catch (error) {
                 console.error('❌ Error:', error);
                 showAlert('Error: ' + error.message, 'danger');

@@ -58,12 +58,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('✅ Repartidor registrado exitosamente:', result);
             
-            showToast('✅ ¡Registrado! Confirma tu email para iniciar sesión', 'success');
-            
-            // Redirigir al login después de 2 segundos
-            setTimeout(() => {
-                window.location.href = '../auth/login.html';
-            }, 2000);
+            // Mostrar modal de confirmación
+            showSuccessModal(
+                '✅ Repartidor Registrado',
+                'Tu cuenta de repartidor ha sido registrada exitosamente. Revisa tu correo de confirmación y da clic en el enlace para activar tu cuenta.',
+                'auth/login.html'
+            );
 
         } catch (error) {
             console.error('❌ Error en registro de repartidor:', error);
@@ -98,6 +98,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 alertDiv.remove();
             }
         }, 5000);
+    }
+
+    // ✅ FUNCIÓN PARA MOSTRAR MODAL DE ÉXITO
+    function showSuccessModal(title, message, redirectUrl) {
+        const modalHtml = `
+            <div class="modal fade" id="successModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${title}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>${message}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="confirmAndRedirect('${redirectUrl}')">Aceptar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Crear e inyectar el modal
+        const div = document.createElement('div');
+        div.innerHTML = modalHtml;
+        document.body.appendChild(div.firstElementChild);
+        
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('successModal'));
+        modal.show();
+        
+        // Auto-redirigir después de 4 segundos
+        setTimeout(() => {
+            confirmAndRedirect(redirectUrl);
+        }, 4000);
+    }
+
+    function confirmAndRedirect(url) {
+        window.location.href = url;
     }
 
     // ✅ FUNCIÓN PARA MOSTRAR TOAST (notificación flotante)

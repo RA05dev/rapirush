@@ -214,5 +214,79 @@ async getRestaurantById(req, res) {
         error: 'Error interno del servidor'
       });
     }
+  },
+
+  // ✅ ACTUALIZAR RESTAURANTE
+  async updateRestaurant(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const updates = req.body;
+
+      console.log(`📝 Actualizando restaurante ${id} por usuario ${userId}`);
+
+      // 1. Verificar que el restaurante existe y pertenece al usuario
+      const { data: restaurant, error: fetchError } = await supabase
+        .from('restaurantes')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError || !restaurant) {
+        return res.status(404).json({
+          success: false,
+          error: 'Restaurante no encontrado'
+        });
+      }
+
+      // ✅ Verificar propiedad: comparar usuario_id con el usuario autenticado
+      if (restaurant.usuario_id !== userId) {
+        console.warn('❌ No autorizado: restaurante.usuario_id:', restaurant.usuario_id, 'userId:', userId);
+        return res.status(403).json({
+          success: false,
+          error: 'No autorizado para actualizar este restaurante'
+        });
+      }
+
+      // 2. Actualizar los campos permitidos
+      const allowedFields = ['nombre', 'descripcion', 'image_url', 'direccion', 'telefono', 'etiquetas', 'abierto'];
+      const updateData = {};
+      
+      allowedFields.forEach(field => {
+        if (field in updates) {
+          updateData[field] = updates[field];
+        }
+      });
+
+      const { error: updateError } = await supabase
+        .from('restaurantes')
+        .update(updateData)
+        .eq('id', id);
+
+      if (updateError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Error al actualizar restaurante: ' + updateError.message
+        });
+      }
+
+      console.log(`✅ Restaurante ${id} actualizado`);
+
+      res.json({
+        success: true,
+        message: 'Restaurante actualizado exitosamente',
+        restaurant: {
+          id,
+          ...updateData
+        }
+      });
+
+    } catch (error) {
+      console.error('💥 Error en updateRestaurant:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor'
+      });
+    }
   }
 };

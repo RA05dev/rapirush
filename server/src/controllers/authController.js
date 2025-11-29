@@ -112,9 +112,9 @@ export const registerCliente = async (req, res) => {
 export const registerRestaurante = async (req, res) => {
   try {
     const { email, password, userData } = req.body;
-    const { nombre, telefono, direccion, tipoComida } = userData;
+    const { nombre, telefono, direccion, tipoComida, image_url } = userData;
 
-    console.log('📝 Registrando restaurante:', { email, nombre, tipoComida });
+    console.log('📝 Registrando restaurante:', { email, nombre, tipoComida, image_url });
 
     // ✅ VALIDAR que se proporcionó contraseña
     if (!password || password.length < 6) {
@@ -167,21 +167,23 @@ export const registerRestaurante = async (req, res) => {
     }
 
     // 3. Insertar en tabla 'restaurantes'
-    const { error: restError } = await supabase
+    const { data: restauranteData, error: restError } = await supabase
       .from('restaurantes')
       .insert([{
-        id: authData.user.id,
+        usuario_id: authData.user.id,
         nombre: nombre || '',
         telefono: telefono || '',
         direccion: direccion || '',
         etiquetas: tipoComida || 'Otros',
+        image_url: image_url || '',
         abierto: false,
         tiempo_delivery: 30,
         descripcion: '',
         rating: 5.0,
         reviews: 0,
         delivery_cost: 0
-      }]);
+      }])
+      .select();
 
     if (restError) {
       console.error('❌ Error insertando en restaurantes:', restError);
@@ -199,6 +201,7 @@ export const registerRestaurante = async (req, res) => {
       message: 'Restaurante registrado exitosamente. Por favor confirma tu email para iniciar sesión.',
       user: {
         id: authData.user.id,
+        restaurante_id: restauranteData?.[0]?.id,
         email: authData.user.email,
         nombre: nombre || '',
         telefono: telefono || '',
@@ -312,6 +315,7 @@ export const registerRepartidor = async (req, res) => {
       message: 'Repartidor registrado exitosamente. Tu cuenta será activada automáticamente en 3 minutos.',
       user: {
         id: authData.user.id,
+        repartidor_id: authData.user.id,
         email: authData.user.email,
         nombre: nombre || '',
         telefono: telefono || '',
@@ -390,6 +394,7 @@ export const login = async (req, res) => {
 
     // 3. Obtener datos específicos según el rol
     let userProfile = {};
+    let specificId = null;
 
     if (usuario.rol === 'cliente') {
       const { data: cliente } = await supabase
@@ -402,9 +407,10 @@ export const login = async (req, res) => {
       const { data: restaurante } = await supabase
         .from('restaurantes')
         .select('*')
-        .eq('id', authData.user.id)
+        .eq('usuario_id', authData.user.id)
         .single();
       userProfile = { ...restaurante };
+      specificId = restaurante?.id;
     } else if (usuario.rol === 'repartidor') {
       const { data: repartidor } = await supabase
         .from('repartidores')
@@ -412,12 +418,13 @@ export const login = async (req, res) => {
         .eq('id', authData.user.id)
         .single();
       userProfile = { ...repartidor };
+      specificId = repartidor?.id;
     }
 
     console.log('✅ Login exitoso:', { email, rol: usuario.rol });
 
     // ✅ MODIFICACIÓN: Incluir el session con tokens
-    res.json({
+    const response = {
       success: true,
       message: 'Login exitoso',
       user: {
@@ -433,7 +440,16 @@ export const login = async (req, res) => {
         expires_in: authData.session.expires_in,
         token_type: authData.session.token_type
       }
-    });
+    };
+
+    // ✅ Agregar IDs específicos si aplica
+    if (usuario.rol === 'restaurante' && specificId) {
+      response.user.restaurante_id = specificId;
+    } else if (usuario.rol === 'repartidor' && specificId) {
+      response.user.repartidor_id = specificId;
+    }
+
+    res.json(response);
 
   } catch (error) {
     console.error('💥 Error inesperado en login:', error);
@@ -530,6 +546,102 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Error interno del servidor' 
+    });
+  }
+};
+
+// ✅ ACTUALIZAR PERFIL DEL USUARIO
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const updates = req.body;
+
+    console.log(`📝 Actualizando perfil de usuario ${userId}`);
+    console.log('📦 Datos a actualizar:', updates);
+
+    // 1. Obtener usuario actual
+    const { data: usuario, error: userError } = await supabase
+      .from('usuarios')
+      .select('rol')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !usuario) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado'
+      });
+    }
+
+    // 2. Actualizar según el rol
+    let table, updateData = {};
+    
+    if (usuario.rol === 'cliente') {
+      table = 'clientes';
+      const allowedFields = ['nombre', 'email', 'telefono', 'direccion'];
+      allowedFields.forEach(field => {
+        if (field in updates) {
+          updateData[field] = updates[field];
+        }
+      });
+    } else if (usuario.rol === 'restaurante') {
+      table = 'restaurantes';
+      const allowedFields = ['nombre', 'descripcion', 'image_url', 'direccion', 'telefono'];
+      allowedFields.forEach(field => {
+        if (field in updates) {
+          // Mapear campo 'imagen' a 'image_url' si es necesario
+          const mappedField = field === 'imagen' ? 'image_url' : field;
+          updateData[mappedField] = updates[field];
+        }
+      });
+    } else if (usuario.rol === 'repartidor') {
+      table = 'repartidores';
+      const allowedFields = ['nombre', 'email', 'telefono', 'vehiculo', 'placa', 'disponible'];
+      allowedFields.forEach(field => {
+        if (field in updates) {
+          updateData[field] = updates[field];
+        }
+      });
+    }
+
+    if (!table) {
+      return res.status(400).json({
+        success: false,
+        error: 'Rol no válido'
+      });
+    }
+
+    // 3. Actualizar en Supabase
+    const { error: updateError } = await supabase
+      .from(table)
+      .update(updateData)
+      .eq('id', userId);
+
+    if (updateError) {
+      console.error('❌ Error actualizando:', updateError);
+      return res.status(400).json({
+        success: false,
+        error: 'Error al actualizar perfil: ' + updateError.message
+      });
+    }
+
+    console.log(`✅ Perfil de ${usuario.rol} ${userId} actualizado`);
+
+    res.json({
+      success: true,
+      message: 'Perfil actualizado exitosamente',
+      user: {
+        id: userId,
+        rol: usuario.rol,
+        ...updateData
+      }
+    });
+
+  } catch (error) {
+    console.error('💥 Error actualizando perfil:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
     });
   }
 };

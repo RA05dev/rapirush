@@ -8,7 +8,8 @@ import {
   registerRepartidor,
   login,
   logout,
-  getProfile
+  getProfile,
+  updateProfile
 } from '../controllers/authController.js';
 import { adminController } from '../controllers/adminController.js';
 import { authMiddleware, optionalAuth } from '../middleware/authMiddleware.js';
@@ -45,6 +46,9 @@ router.post('/logout', authMiddleware, logout);
 
 // Obtener perfil del usuario autenticado
 router.get('/profile', authMiddleware, getProfile);
+
+// Actualizar perfil del usuario autenticado
+router.put('/profile', authMiddleware, updateProfile);
 
 // Ruta para verificar token (útil para el frontend)
 router.get('/verify', authMiddleware, (req, res) => {
@@ -94,6 +98,8 @@ router.get('/me', optionalAuth, async (req, res) => {
       authenticated: true
     };
 
+    let specificId = null;
+
     // Obtener datos específicos según el rol
     if (usuario.rol === 'cliente') {
       const { data: cliente } = await supabase
@@ -105,17 +111,26 @@ router.get('/me', optionalAuth, async (req, res) => {
     } else if (usuario.rol === 'restaurante') {
       const { data: restaurante } = await supabase
         .from('restaurantes')
-        .select('nombre, telefono, direccion, etiquetas, abierto')
-        .eq('id', req.user.id)
+        .select('*')
+        .eq('usuario_id', req.user.id)
         .single();
       userData = { ...userData, ...restaurante };
+      specificId = restaurante?.id;
     } else if (usuario.rol === 'repartidor') {
       const { data: repartidor } = await supabase
         .from('repartidores')
-        .select('nombre, telefono, tipo_vehiculo')
+        .select('*')
         .eq('id', req.user.id)
         .single();
       userData = { ...userData, ...repartidor };
+      specificId = repartidor?.id;
+    }
+
+    // ✅ Agregar IDs específicos si aplica
+    if (usuario.rol === 'restaurante' && specificId) {
+      userData.restaurante_id = specificId;
+    } else if (usuario.rol === 'repartidor' && specificId) {
+      userData.repartidor_id = specificId;
     }
 
     res.json({

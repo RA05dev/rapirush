@@ -226,16 +226,25 @@ export const getOrdersByRestaurant = async (req, res) => {
     const userId = req.user.id;
 
     console.log('📋 Obteniendo pedidos para restaurante:', restaurantId);
+    console.log('👤 Usuario autenticado:', userId);
 
-    // ✅ VERIFICAR que el usuario es el propietario del restaurante
+    // ✅ VERIFICAR QUE EL USUARIO ES PROPIETARIO DEL RESTAURANTE
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurantes')
       .select('usuario_id')
       .eq('id', restaurantId)
       .single();
 
-    if (restaurantError || restaurant?.usuario_id !== userId) {
-      console.error('❌ No autorizado para ver estos pedidos');
+    if (restaurantError || !restaurant) {
+      console.error('❌ Restaurante no encontrado:', restaurantId);
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurante no encontrado'
+      });
+    }
+
+    if (restaurant.usuario_id !== userId) {
+      console.error('❌ No autorizado: usuario no es propietario del restaurante');
       return res.status(403).json({
         success: false,
         error: 'No tienes permiso para ver estos pedidos'

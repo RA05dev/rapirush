@@ -152,7 +152,8 @@ async function fetchAllRestaurants() {
     console.log('📤 Obteniendo restaurantes desde API (primera carga)...');
     console.time('⏱️ API Restaurantes');
     
-    const response = await fetch('http://localhost:3000/api/restaurants');
+    // ✅ TRAER TODOS LOS RESTAURANTES (sin límite de paginación)
+    const response = await fetch('http://localhost:3000/api/restaurants?limit=100');
     const result = await response.json();
 
     console.timeEnd('⏱️ API Restaurantes');

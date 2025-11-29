@@ -271,6 +271,50 @@ function showOrderDetails(order) {
 }
 
 // ==============================
+// ==============================
+// 🔹 UTILIDAD: OBTENER COLOR BADGE SEGÚN ESTADO
+// ==============================
+function getStatusBadgeClass(estado) {
+  const estadoLower = String(estado).toLowerCase().trim();
+  
+  const colorMap = {
+    'recibido': 'bg-info text-white',        // Azul - orden recibida
+    'aceptado': 'bg-success text-white',     // Verde - restaurante aceptó
+    'preparando': 'bg-warning text-dark',    // Naranja - en preparación
+    'listo': 'bg-danger text-white',         // Rojo - listo para recoger
+    'en_camino': 'bg-purple text-white',     // Púrpura - repartidor en camino
+    'encamino': 'bg-purple text-white',      // Alternativa sin guion
+    'llegado': 'bg-secondary text-white',    // Gris/Marrón - llegó destino
+    'entregado': 'bg-dark text-white',       // Oscuro - completado
+    'cancelado': 'bg-danger text-white',     // Rojo - cancelado
+    'rechazado': 'bg-danger text-white'      // Rojo - rechazado
+  };
+  
+  return colorMap[estadoLower] || 'bg-secondary text-white';
+}
+
+// ==============================
+// 🔹 OBTENER DESCRIPCIÓN DE ESTADO
+// ==============================
+function getStatusDescription(estado) {
+  const estadoLower = String(estado).toLowerCase().trim();
+  
+  const descriptions = {
+    'recibido': 'Pedido recibido',
+    'aceptado': 'Aceptado por el restaurante',
+    'preparando': 'En preparación',
+    'listo': 'Listo para recoger',
+    'en_camino': 'En camino',
+    'encamino': 'En camino',
+    'llegado': 'Llegado al destino',
+    'entregado': 'Entregado',
+    'cancelado': 'Cancelado',
+    'rechazado': 'Rechazado'
+  };
+  
+  return descriptions[estadoLower] || estado;
+}
+
 // 🔹 MOSTRAR RASTREO - VERSIÓN MEJORADA
 // ==============================
 function showTracking(order) {

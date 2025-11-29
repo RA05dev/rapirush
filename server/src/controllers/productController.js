@@ -67,7 +67,7 @@ function getCategoryIcon(categoryName) {
 }
 
 export const productController = {
-    
+
     // ✅ OBTENER PRODUCTOS POR RESTAURANTE
 async getProductsByRestaurant(req, res) {
     try {
@@ -279,7 +279,7 @@ async getProductsByRestaurant(req, res) {
                     descripcion: descripcion || '',
                     categoria: categoria,
                     base_price: parseFloat(base_price),
-                    image: image_url || '',
+                    image: image_url || null,
                     rating: 5.0,
                     reviews: 0
                 }])
@@ -310,7 +310,6 @@ async getProductsByRestaurant(req, res) {
 
                 if (sizesError) {
                     console.error('⚠️ Error creando tamaños:', sizesError);
-                    // No es crítico, continuar
                 }
             }
 
@@ -322,6 +321,144 @@ async getProductsByRestaurant(req, res) {
 
         } catch (error) {
             console.error('💥 Error en createProduct:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Error interno del servidor'
+            });
+        }
+    },
+
+    // ✅ ACTUALIZAR PRODUCTO
+    async updateProduct(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+            const updates = req.body;
+
+            console.log(`📝 Actualizando producto ${id} por usuario ${userId}`);
+
+            // 1. Obtener el producto
+            const { data: product, error: fetchError } = await supabase
+                .from('productos')
+                .select('*, restaurantes(usuario_id)')
+                .eq('id', id)
+                .single();
+
+            if (fetchError || !product) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Producto no encontrado'
+                });
+            }
+
+            // Verificar propiedad
+            if (product.restaurantes.usuario_id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'No autorizado para actualizar este producto'
+                });
+            }
+
+            // 2. Actualizar campos permitidos
+            const allowedFields = ['nombre', 'descripcion', 'categoria', 'base_price', 'image_url', 'rating', 'reviews'];
+            const updateData = {};
+            
+            allowedFields.forEach(field => {
+                if (field in updates) {
+                    updateData[field] = updates[field];
+                }
+            });
+
+            const { error: updateError } = await supabase
+                .from('productos')
+                .update(updateData)
+                .eq('id', id);
+
+            if (updateError) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Error al actualizar producto'
+                });
+            }
+
+            console.log(`✅ Producto ${id} actualizado`);
+
+            res.json({
+                success: true,
+                message: 'Producto actualizado exitosamente',
+                product: {
+                    id,
+                    ...updateData
+                }
+            });
+
+        } catch (error) {
+            console.error('💥 Error en updateProduct:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Error interno del servidor'
+            });
+        }
+    },
+
+    // ✅ ELIMINAR PRODUCTO
+    async deleteProduct(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+
+            console.log(`🗑️ Eliminando producto ${id} por usuario ${userId}`);
+
+            // 1. Obtener el producto
+            const { data: product, error: fetchError } = await supabase
+                .from('productos')
+                .select('*, restaurantes(usuario_id)')
+                .eq('id', id)
+                .single();
+
+            if (fetchError || !product) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Producto no encontrado'
+                });
+            }
+
+            // Verificar propiedad
+            if (product.restaurantes.usuario_id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'No autorizado para eliminar este producto'
+                });
+            }
+
+            // 2. Eliminar tamaños del producto
+            await supabase
+                .from('producto_sizes')
+                .delete()
+                .eq('producto_id', id);
+
+            // 3. Eliminar el producto
+            const { error: deleteError } = await supabase
+                .from('productos')
+                .delete()
+                .eq('id', id);
+
+            if (deleteError) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Error al eliminar producto'
+                });
+            }
+
+            console.log(`✅ Producto ${id} eliminado`);
+
+            res.json({
+                success: true,
+                message: 'Producto eliminado exitosamente'
+            });
+
+        } catch (error) {
+            console.error('💥 Error en deleteProduct:', error);
             res.status(500).json({
                 success: false,
                 error: 'Error interno del servidor'

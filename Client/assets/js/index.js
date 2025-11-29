@@ -7,15 +7,20 @@ function renderPopularRestaurants() {
 }
 
 // Renderizar restaurantes en resultsContainer
-function renderRestaurants(data) {
-  renderRestaurantsList(data, 'resultsContainer');
+async function renderRestaurants(data) {
+  // Usar el método del API para renderizar
+  if (window.rapiRushAPI) {
+    window.rapiRushAPI.renderRestaurantsList(data, 'resultsContainer');
+  }
 }
 
 // Buscar restaurantes
 async function buscarRestaurantes() {
   const query = document.getElementById('searchInput').value.trim();
-  const restaurants = await searchRestaurantsAPI(query);
-  renderRestaurants(restaurants);
+  console.log('🔍 Buscando restaurantes con query:', query);
+  
+  const restaurants = await window.rapiRushAPI.searchRestaurants(query);
+  await renderRestaurants(restaurants);
 
   // Scroll a resultados
   const resultsContainer = document.getElementById('resultsContainer');
@@ -26,8 +31,17 @@ async function buscarRestaurantes() {
 
 // Filtrar por categoría
 async function filtrarPorCategoria(categoria) {
-  const restaurants = await searchRestaurantsAPI('', categoria);
-  renderRestaurants(restaurants);
+  console.log('🏷️ Filtrando por categoría:', categoria);
+  
+  let restaurants;
+  if (categoria === 'todos' || categoria === 'Todos') {
+    // Si seleccionan "Todos", obtener todos los restaurantes
+    restaurants = await window.rapiRushAPI.getAllRestaurants();
+  } else {
+    restaurants = await window.rapiRushAPI.searchRestaurants('', categoria);
+  }
+  
+  await renderRestaurants(restaurants);
 }
 
 // Inicializar eventos

@@ -126,7 +126,8 @@ async request(endpoint, options = {}) {
             nombre: userData.nombre,
             telefono: userData.telefono,
             direccion: userData.direccion,
-            tipoComida: userData.tipoComida
+            tipoComida: userData.tipoComida,
+            image_url: userData.image_url || null
           }
         })
       });
@@ -248,8 +249,6 @@ async request(endpoint, options = {}) {
       throw error;
     }
   }
-
-
 
 
   // ✅ LOGOUT
@@ -452,6 +451,94 @@ async request(endpoint, options = {}) {
   static async register(userData) {
     // Por defecto usa registro de cliente para mantener compatibilidad
     return this.registerCliente(userData);
+  }
+
+  // ✅ BUSCAR RESTAURANTES POR QUERY O CATEGORÍA
+  async searchRestaurants(query = '', category = '') {
+    try {
+      console.log('🔍 Buscando restaurantes:', { query, category });
+      
+      let endpoint = '/restaurants/search?';
+      const params = new URLSearchParams();
+      
+      if (query) params.append('query', query);
+      if (category) params.append('category', category);
+      
+      endpoint += params.toString();
+      
+      const response = await fetch(`${this.baseURL}${endpoint}`);
+      const data = await response.json();
+      
+      console.log('✅ Resultados de búsqueda:', data);
+      return data.data || [];
+    } catch (error) {
+      console.error('❌ Error en búsqueda:', error);
+      return [];
+    }
+  }
+
+  // ✅ OBTENER TODOS LOS RESTAURANTES
+  async getAllRestaurants() {
+    try {
+      console.log('📋 Obteniendo todos los restaurantes');
+      
+      const response = await fetch(`${this.baseURL}/restaurants`);
+      const data = await response.json();
+      
+      console.log('✅ Restaurantes obtenidos:', data);
+      return data.data || data || [];
+    } catch (error) {
+      console.error('❌ Error obteniendo restaurantes:', error);
+      return [];
+    }
+  }
+
+  // ✅ RENDERIZAR LISTA DE RESTAURANTES
+  renderRestaurantsList(data, containerId = 'resultsContainer') {
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.warn('⚠️ Contenedor no encontrado:', containerId);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      container.innerHTML = '<div class="col-12 text-center text-muted py-5"><p>No se encontraron restaurantes</p></div>';
+      return;
+    }
+
+    const html = data.map(restaurant => {
+      const imageUrl = restaurant.img || restaurant.image_url || restaurant.image || '/Client/assets/Img/default.png';
+      const name = restaurant.name || restaurant.nombre || 'Restaurante';
+      const description = restaurant.description || restaurant.descripcion || '';
+      const rating = restaurant.rating || restaurant.calificacion || 4.5;
+      const reviews = restaurant.reviews || restaurant.resenas || 0;
+      const deliveryTime = restaurant.deliveryTime || restaurant.tiempo_entrega || '30-45 min';
+      const deliveryCost = restaurant.deliveryCost || restaurant.costo_entrega || 2.99;
+      const id = restaurant.id || '';
+
+      return `
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 restaurant-card">
+            <img src="${imageUrl}" class="card-img-top" alt="${name}" style="height: 200px; object-fit: cover;">
+            <div class="card-body">
+              <h5 class="card-title">${name}</h5>
+              <p class="card-text text-truncate">${description}</p>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">⭐ ${rating.toFixed(1)} (${reviews})</small>
+              </div>
+              <div class="d-flex justify-content-between mb-3">
+                <small>🚚 ${deliveryTime}</small>
+                <small>$${typeof deliveryCost === 'number' ? deliveryCost.toFixed(2) : deliveryCost}</small>
+              </div>
+              <a href="restaurante.html?id=${id}" class="btn btn-primary w-100">Ver menú</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `<div class="row">${html}</div>`;
+    console.log('✅ Restaurantes renderizados en:', containerId);
   }
 
   // ✅ ACTUALIZAR ESTADO DEL PEDIDO

@@ -106,6 +106,11 @@
                             ✅ Entregados <span id="entregadosTabCount" class="badge bg-info ms-2">0</span>
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="perfil-tab" data-bs-toggle="tab" data-bs-target="#perfil" type="button" role="tab">
+                            ⚙️ Perfil
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content">
@@ -148,6 +153,66 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Perfil -->
+                    <div class="tab-pane fade" id="perfil" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-8 mx-auto">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="bi bi-pencil-square"></i> Mi Perfil</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="perfilForm" onsubmit="guardarPerfilRepartidor(event)">
+                                            <div class="mb-3">
+                                                <label class="form-label">Nombre Completo</label>
+                                                <input type="text" class="form-control" id="perfilNombre" required>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Email</label>
+                                                <input type="email" class="form-control" id="perfilEmail" readonly>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Teléfono</label>
+                                                <input type="tel" class="form-control" id="perfilTelefono">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Vehículo (ej: Bicicleta, Moto, Auto)</label>
+                                                <input type="text" class="form-control" id="perfilVehiculo">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Placa del Vehículo</label>
+                                                <input type="text" class="form-control" id="perfilPlaca">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Disponible para Entregas</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="perfilDisponible">
+                                                    <label class="form-check-label" for="perfilDisponible">
+                                                        Sí, estoy disponible
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex gap-2">
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="bi bi-check-lg"></i> Guardar Cambios
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" onclick="cargarPerfilRepartidor()">
+                                                    <i class="bi bi-arrow-clockwise"></i> Recargar
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -174,6 +239,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/api/rapiRushAPI.js"></script>
     <script src="../assets/js/api/cache.js"></script>
+    <script src="../assets/js/authManager.js"></script>
     <script>
         // Variables globales - DECLARAR ANTES
         let repartidorId;
@@ -192,31 +258,51 @@
                 console.log('✅ authManager está listo');
             }
             
-            console.log('🔍 sessionStorage actual:', {
-                user_id: sessionStorage.getItem('user_id'),
-                user_name: sessionStorage.getItem('user_name'),
-                user_role: sessionStorage.getItem('user_role')
-            });
+            // ✅ USAR authManager.getCurrentUser() - MÁS SEGURO
+            let currentUser = window.authManager?.getCurrentUser();
+            
+            // ✅ FALLBACK: Si no hay currentUser en authManager, intentar desde localStorage
+            if (!currentUser || (!currentUser.repartidor_id && !currentUser.id)) {
+                console.warn('⚠️ repartidor_id no disponible, intentando desde storage...');
+                const storedRepartidorId = localStorage.getItem('repartidor_id');
+                const storedUserId = localStorage.getItem('user_id');
+                const storedUserName = localStorage.getItem('user_name');
+                const storedUserRole = localStorage.getItem('user_role');
+                
+                console.log('📦 Storage values:', { storedRepartidorId, storedUserId, storedUserName, storedUserRole });
+                
+                if (storedRepartidorId || storedUserRole === 'repartidor') {
+                    currentUser = {
+                        id: storedUserId || currentUser?.id,
+                        repartidor_id: storedRepartidorId || storedUserId,
+                        nombre: storedUserName || currentUser?.nombre || 'Repartidor',
+                        rol: storedUserRole || 'repartidor'
+                    };
+                    console.log('✅ Usuario recuperado desde storage:', currentUser);
+                }
+            }
+            
+            // Extraer datos del usuario autenticado
+            repartidorId = currentUser?.repartidor_id || currentUser?.id;
+            repartidorName = currentUser?.nombre || currentUser?.name;
+            userRole = currentUser?.rol || currentUser?.role;
 
-            repartidorId = sessionStorage.getItem('user_id');
-            repartidorName = sessionStorage.getItem('user_name');
-            userRole = sessionStorage.getItem('user_role');
-
-            console.log('📍 Valores extraídos:', {
+            console.log('📍 Valores del authManager:', {
                 repartidorId,
                 repartidorName,
                 userRole
             });
 
-            // Verificar autenticación - AHORA DENTRO DE DOMContentLoaded
+            // Verificar autenticación
             if (!repartidorId || userRole !== 'repartidor') {
-                console.error('❌ Autenticación fallida. Redirigiendo a login...');
-                console.error({
-                    repartidorId_exists: !!repartidorId,
-                    userRole_matches: userRole === 'repartidor'
+                console.error('❌ Autenticación fallida. No hay repartidor válido.');
+                console.error('Detalles:', {
+                    currentUser,
+                    userRole_value: userRole,
+                    expected_role: 'repartidor'
                 });
                 window.location.href = '../auth/login.html';
-                return; // ✅ IMPORTANTE: Detener ejecución del resto del script
+                return;
             }
 
             console.log('✅ Autenticación verificada. Repartidor ID:', repartidorId);
@@ -484,6 +570,90 @@
 
         // Cargar pedidos al iniciar
         loadMyOrders();
+        cargarPerfilRepartidor(); // ← Cargar perfil también
+
+        // ✅ FUNCIONES PARA PERFIL REPARTIDOR
+        async function cargarPerfilRepartidor() {
+            try {
+                const token = localStorage.getItem('supabaseAuthToken');
+                const repartidorId = repartidorId || window.authManager?.getCurrentUser()?.id;
+                
+                if (!token || !repartidorId) throw new Error('No autenticado');
+
+                // Para repartidor, usamos el endpoint de usuarios
+                const response = await fetch(`http://localhost:3000/api/auth/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    console.warn('⚠️ Endpoint de perfil no disponible, usando datos del storage');
+                    const currentUser = window.authManager?.getCurrentUser();
+                    document.getElementById('perfilNombre').value = currentUser?.nombre || '';
+                    document.getElementById('perfilEmail').value = currentUser?.email || '';
+                    return;
+                }
+
+                const data = await response.json();
+                const usuario = data.user || data.data;
+
+                document.getElementById('perfilNombre').value = usuario.nombre || '';
+                document.getElementById('perfilEmail').value = usuario.email || '';
+                document.getElementById('perfilTelefono').value = usuario.telefono || '';
+                document.getElementById('perfilVehiculo').value = usuario.vehiculo || '';
+                document.getElementById('perfilPlaca').value = usuario.placa || '';
+                document.getElementById('perfilDisponible').checked = usuario.disponible !== false;
+
+                console.log('✅ Perfil cargado:', usuario);
+            } catch (error) {
+                console.error('❌ Error cargando perfil:', error);
+                // No mostrar alerta de error, es solo para mostrar info
+            }
+        }
+
+        async function guardarPerfilRepartidor(event) {
+            event.preventDefault();
+
+            const perfilData = {
+                nombre: document.getElementById('perfilNombre').value.trim(),
+                telefono: document.getElementById('perfilTelefono').value.trim(),
+                vehiculo: document.getElementById('perfilVehiculo').value.trim(),
+                placa: document.getElementById('perfilPlaca').value.trim(),
+                disponible: document.getElementById('perfilDisponible').checked
+            };
+
+            try {
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                console.log('📝 Actualizando perfil:', perfilData);
+
+                const response = await fetch('http://localhost:3000/api/auth/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(perfilData)
+                });
+
+                const data = await response.json();
+                console.log('📥 Respuesta:', data);
+
+                if (!response.ok) throw new Error(data.error || 'Error al actualizar perfil');
+
+                showAlert('✅ Perfil actualizado exitosamente', 'success');
+
+                // Actualizar nombre en navbar
+                if (perfilData.nombre) {
+                    document.getElementById('userName').textContent = perfilData.nombre;
+                }
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
         // Recargar cada 10 segundos
         setInterval(loadMyOrders, 10000);
     </script>

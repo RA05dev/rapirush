@@ -118,15 +118,27 @@ class AuthManager {
         const userData = apiData.user || apiData;
         
         this.currentUser = {
-            id: userData.id,
-            name: userData.nombres || userData.nombre || userData.email.split('@')[0],
+            id: userData.id,                                          // ✅ ID del usuario (auth)
+            restaurante_id: userData.restaurante_id || null,         // ✅ ID del restaurante si aplica
+            repartidor_id: userData.repartidor_id || null,           // ✅ ID del repartidor si aplica
+            nombre: userData.nombre || userData.nombres || userData.email.split('@')[0],  // ✅ Nombre correcto
+            name: userData.nombre || userData.nombres || userData.email.split('@')[0],    // ✅ Alias para compatibilidad
             email: userData.email,
+            role: userData.rol || 'cliente',                          // ✅ Inglés para compatibilidad
+            rol: userData.rol || 'cliente',                           // ✅ Español para dashboards
             phone: userData.telefono || '',
             address: userData.direccion || '',
-            role: userData.rol || 'cliente',
             loggedIn: true,
             loginTime: new Date().toISOString()
         };
+
+        console.log('💾 Sincronizando datos del usuario:', {
+            id: this.currentUser.id,
+            restaurante_id: this.currentUser.restaurante_id,
+            repartidor_id: this.currentUser.repartidor_id,
+            name: this.currentUser.name,
+            role: this.currentUser.role
+        });
 
         this.saveToStorage();
         return this.currentUser;
@@ -136,6 +148,18 @@ class AuthManager {
         try {
             if (this.currentUser) {
                 localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+                localStorage.setItem('user_id', this.currentUser.id);
+                localStorage.setItem('user_name', this.currentUser.nombre || this.currentUser.name);
+                localStorage.setItem('user_role', this.currentUser.role || this.currentUser.rol);
+                
+                // ✅ Guardar IDs específicos si existen
+                if (this.currentUser.restaurante_id) {
+                    localStorage.setItem('restaurante_id', this.currentUser.restaurante_id);
+                }
+                if (this.currentUser.repartidor_id) {
+                    localStorage.setItem('repartidor_id', this.currentUser.repartidor_id);
+                }
+                
                 console.log('💾 Usuario guardado en storage');
             }
             
@@ -177,19 +201,26 @@ class AuthManager {
                 throw new Error('No se recibió token de autenticación');
             }
 
-            // ✅ GUARDAR DATOS EN sessionStorage PARA LOS DASHBOARDS
+            // ✅ GUARDAR DATOS EN sessionStorage Y localStorage PARA LOS DASHBOARDS
             sessionStorage.setItem('user_id', result.user.id);
             sessionStorage.setItem('user_email', result.user.email);
             sessionStorage.setItem('user_role', result.user.rol);
             sessionStorage.setItem('user_name', result.user.nombre || result.user.nombres || result.user.email);
             
+            // ✅ TAMBIÉN GUARDAR EN localStorage PARA PERSISTENCIA
+            localStorage.setItem('user_id', result.user.id);
+            localStorage.setItem('user_email', result.user.email);
+            localStorage.setItem('user_role', result.user.rol);
+            localStorage.setItem('user_name', result.user.nombre || result.user.nombres || result.user.email);
+            
             // ✅ SINCRONIZAR DATOS DEL USUARIO
             this.currentUser = {
                 id: result.user.id,
+                nombre: result.user.nombre || result.user.nombres || result.user.email,  // ✅ Con tilde
+                name: result.user.nombre || result.user.nombres || result.user.email,    // ✅ Sin tilde
                 email: result.user.email,
-                name: result.user.nombre || result.user.nombres || result.user.email,
-                role: result.user.rol,  // ✅ Usar 'role' para compatibilidad
-                rol: result.user.rol,   // ✅ También guardar como 'rol'
+                role: result.user.rol,  // ✅ Inglés para compatibilidad
+                rol: result.user.rol,   // ✅ Español para dashboards
                 loggedIn: true,         // ✅ CRÍTICO: Marcar como logueado
                 ...result.user
             };
@@ -353,6 +384,10 @@ class AuthManager {
         
         localStorage.removeItem('currentUser');
         localStorage.removeItem('supabaseAuthToken');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('user_role');
+        localStorage.removeItem('user_name');
         sessionStorage.clear();
         
         if (window.rapiRushAPI && typeof window.rapiRushAPI.clearToken === 'function') {
