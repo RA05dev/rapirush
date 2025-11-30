@@ -6,7 +6,8 @@ import {
   getOrderById,
   updateOrderStatus,
   getOrdersByRestaurant,
-  getOrdersByRepartidor
+  getOrdersByRepartidor,
+  assignRepartidor
 } from '../controllers/orderController.js';
 
 const router = express.Router();
@@ -14,9 +15,10 @@ const router = express.Router();
 // ✅ RUTAS PROTEGIDAS
 router.post('/create', authMiddleware, createOrder);
 router.get('/my-orders', authMiddleware, getOrdersByUser);
-router.get('/restaurant/:restaurantId', authMiddleware, getOrdersByRestaurant);
-router.get('/repartidor/:repartidorId', authMiddleware, getOrdersByRepartidor);
+router.get('/restaurant', authMiddleware, getOrdersByRestaurant); // ✅ CORREGIDO: Sin parámetro
+router.get('/repartidor', authMiddleware, getOrdersByRepartidor); // ✅ CORREGIDO: Sin parámetro
 router.get('/:orderId', authMiddleware, getOrderById);
 router.put('/:orderId/status', authMiddleware, updateOrderStatus);
+router.post('/:orderId/assign-repartidor', authMiddleware, assignRepartidor); // ✅ NUEVA: Asignar repartidor
 
 export default router;

@@ -1,6 +1,49 @@
 import { supabase } from '../config/supabaseClient.js';
 
-// ✅ REGISTRO CLIENTE - VERSIÓN RÁPIDA
+// ✅ MAPEO AUTOMÁTICO: tipo_comida → categoria_id
+const CATEGORY_MAPPING = {
+  'Pollos': 'Comida Rápida',
+  'Pizzas': 'Italiana',
+  'Sushi': 'Asiática',
+  'Hamburguesas': 'Comida Rápida',
+  'Chifa': 'Asiática',
+  'Postres': 'Postres',
+  'Mexicana': 'Mexicana',
+  'Italiana': 'Italiana',
+  'Vegetariana': 'Vegetariana',
+  'Otros': 'Comida Rápida'
+};
+
+async function mapTipoComidaToCategory(tipoComida) {
+  if (!tipoComida) return null;
+  
+  const categoryName = CATEGORY_MAPPING[tipoComida] || 'Comida Rápida';
+  
+  try {
+    const { data: category, error } = await supabase
+      .from('tb_categorias')
+      .select('categoria_id')
+      .eq('nombre', categoryName)
+      .single();
+    
+    if (error || !category) {
+      console.warn(`⚠️ Categoría no encontrada: ${categoryName}, usando default`);
+      const { data: defaultCat } = await supabase
+        .from('tb_categorias')
+        .select('categoria_id')
+        .eq('nombre', 'Comida Rápida')
+        .single();
+      return defaultCat?.categoria_id || null;
+    }
+    
+    return category.categoria_id;
+  } catch (err) {
+    console.error('❌ Error en mapTipoComidaToCategory:', err);
+    return null;
+  }
+}
+
+// ✅ REGISTRO CLIENTE
 export const registerCliente = async (req, res) => {
   try {
     const { email, password, userData } = req.body;
@@ -30,64 +73,67 @@ export const registerCliente = async (req, res) => {
     }
 
     console.log('✅ Usuario Auth creado:', authData.user.id);
-
-    // ✅ AGREGAR PEQUEÑO DELAY (solo 200ms) para Supabase
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    // 2. Insertar en tabla 'usuarios' con rol 'cliente'
-    // NOTA: Clientes NO necesitan estado 'pendiente', usan email validation de Supabase Auth
+    // 2. Insertar en tb_usuarios
     const { error: userError } = await supabase
-      .from('usuarios')
+      .from('tb_usuarios')
       .insert([{
-        id: authData.user.id,
-        rol: 'cliente'
+        usuario_id: authData.user.id,
+        email: email,
+        rol: 'cliente',
+        estado: 'activo'
       }]);
 
     if (userError) {
-      console.error('❌ Error insertando en usuarios:', userError);
+      console.error('❌ Error insertando en tb_usuarios:', userError);
       return res.status(400).json({ 
         success: false, 
-        error: 'Error creando perfil de usuario. Por favor intenta registrarte con otro email.' 
+        error: 'Error creando perfil de usuario' 
       });
     }
 
-    // 3. Insertar en tabla 'clientes'
+    // 3. Insertar en tb_clientes
+    const nombresArray = (nombres || '').split(' ');
+    const cliente_nombre = nombresArray[0] || '';
+    const cliente_apellido = nombresArray.slice(1).join(' ') || '';
+
     const { error: clientError } = await supabase
-      .from('clientes')
+      .from('tb_clientes')
       .insert([{
-        id: authData.user.id,
-        nombres: nombres || '',
-        telefono: telefono || '',
-        direccion: direccion || ''
+        usuario_id: authData.user.id,
+        cliente_nombre: cliente_nombre,
+        cliente_apellido: cliente_apellido,
+        cliente_email: email,
+        cliente_telefono: telefono || '',
+        cliente_direccion: direccion || ''
       }]);
 
     if (clientError) {
-      console.error('❌ Error insertando en clientes:', clientError);
-      // Solo eliminar de nuestra tabla usuarios, no de auth
-      await supabase.from('usuarios').delete().eq('id', authData.user.id);
+      console.error('❌ Error insertando en tb_clientes:', clientError);
+      await supabase.from('tb_usuarios').delete().eq('usuario_id', authData.user.id);
       return res.status(400).json({ 
         success: false, 
-        error: 'Error completando registro. Por favor intenta nuevamente.' 
+        error: 'Error completando registro' 
       });
     }
 
-    console.log('✅ Cliente registrado exitosamente:', authData.user.id);
+    console.log('✅ Cliente registrado exitosamente');
 
-    // ✅ MODIFICACIÓN: Incluir session si está disponible (auto-login después de registro)
     const response = {
       success: true,
       message: 'Cliente registrado exitosamente. Por favor verifica tu email.',
       user: {
-        id: authData.user.id,
+        usuario_id: authData.user.id,
         email: authData.user.email,
-        nombres: nombres || '',
-        telefono: telefono || '',
-        direccion: direccion || '',
+        cliente_nombre: cliente_nombre,
+        cliente_apellido: cliente_apellido,
+        cliente_telefono: telefono || '',
+        cliente_direccion: direccion || '',
         rol: 'cliente'
       }
     };
 
-    // Si Supabase devuelve session (auto-login), incluirla
     if (authData.session) {
       response.session = {
         access_token: authData.session.access_token,
@@ -108,15 +154,24 @@ export const registerCliente = async (req, res) => {
   }
 };
 
-// ✅ REGISTRO RESTAURANTE - VERSIÓN RÁPIDA
+// ✅ REGISTRO RESTAURANTE
 export const registerRestaurante = async (req, res) => {
   try {
     const { email, password, userData } = req.body;
-    const { nombre, telefono, direccion, tipoComida, image_url } = userData;
+    const { 
+      nombre, 
+      telefono, 
+      direccion, 
+      categoria_id, 
+      descripcion,
+      restaurante_url,
+      tipo_comida,
+      tiempo_delivery,
+      delivery_cost
+    } = userData;
 
-    console.log('📝 Registrando restaurante:', { email, nombre, tipoComida, image_url });
+    console.log('🏪 Registrando restaurante:', { email, nombre, tipo_comida });
 
-    // ✅ VALIDAR que se proporcionó contraseña
     if (!password || password.length < 6) {
       return res.status(400).json({ 
         success: false, 
@@ -124,16 +179,26 @@ export const registerRestaurante = async (req, res) => {
       });
     }
 
-    // 1. Crear usuario en Supabase Auth
+    let finalCategoriaId = categoria_id;
+    if (!finalCategoriaId && tipo_comida) {
+      finalCategoriaId = await mapTipoComidaToCategory(tipo_comida);
+      console.log(`✅ Categoría mapeada automáticamente: ${tipo_comida} → ${finalCategoriaId}`);
+    }
+
+    if (!finalCategoriaId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere categoría o tipo de comida válido'
+      });
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
-      password: password, // ← Usar contraseña del usuario
+      password,
       options: {
         data: {
           nombre,
-          telefono,
-          direccion,
-          tipoComida
+          rol: 'restaurante'
         }
       }
     });
@@ -146,72 +211,71 @@ export const registerRestaurante = async (req, res) => {
       });
     }
 
-    // ✅ DELAY MINIMO
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    // 2. Insertar en tabla 'usuarios' con estado 'activo' (sin esperar admin)
     const { error: userError } = await supabase
-      .from('usuarios')
+      .from('tb_usuarios')
       .insert([{
-        id: authData.user.id,
+        usuario_id: authData.user.id,
+        email: email,
         rol: 'restaurante',
-        estado: 'activo'  // ← Directo a activo, sin esperar admin
+        estado: 'activo'
       }]);
 
     if (userError) {
-      console.error('❌ Error insertando en usuarios:', userError);
+      console.error('❌ Error insertando en tb_usuarios:', userError);
       return res.status(400).json({ 
         success: false, 
         error: 'Error creando perfil de restaurante' 
       });
     }
 
-    // 3. Insertar en tabla 'restaurantes'
-    const { data: restauranteData, error: restError } = await supabase
-      .from('restaurantes')
+    const { error: restError } = await supabase
+      .from('tb_restaurantes')
       .insert([{
         usuario_id: authData.user.id,
-        nombre: nombre || '',
-        telefono: telefono || '',
-        direccion: direccion || '',
-        etiquetas: tipoComida || 'Otros',
-        image_url: image_url || '',
-        abierto: false,
-        tiempo_delivery: 30,
-        descripcion: '',
-        rating: 5.0,
-        reviews: 0,
-        delivery_cost: 0
-      }])
-      .select();
+        categoria_id: finalCategoriaId,
+        restaurante_nombre: nombre,
+        restaurante_email: email,
+        restaurante_telefono: telefono || '',
+        restaurante_descripcion: descripcion || '',
+        restaurante_direccion: direccion,
+        restaurante_url: restaurante_url || null,
+        tipo_comida: tipo_comida || null,
+        tiempo_delivery: tiempo_delivery || 30,
+        delivery_cost: delivery_cost || 0,
+        numero_reviews: 0,
+        es_abierto: false,
+        es_verificado: false,
+        calificacion_promedio: 0
+      }]);
 
     if (restError) {
-      console.error('❌ Error insertando en restaurantes:', restError);
-      await supabase.from('usuarios').delete().eq('id', authData.user.id);
+      console.error('❌ Error insertando en tb_restaurantes:', restError);
+      await supabase.from('tb_usuarios').delete().eq('usuario_id', authData.user.id);
       return res.status(400).json({ 
         success: false, 
         error: 'Error completando registro del restaurante' 
       });
     }
 
-    console.log('✅ Restaurante registrado exitosamente:', authData.user.id);
+    console.log('✅ Restaurante registrado exitosamente');
 
     const response = {
       success: true,
-      message: 'Restaurante registrado exitosamente. Por favor confirma tu email para iniciar sesión.',
+      message: 'Restaurante registrado correctamente. Por favor revisa tu email para confirmar tu cuenta.',
       user: {
-        id: authData.user.id,
-        restaurante_id: restauranteData?.[0]?.id,
+        usuario_id: authData.user.id,
         email: authData.user.email,
-        nombre: nombre || '',
-        telefono: telefono || '',
-        direccion: direccion || '',
-        tipoComida: tipoComida || 'Otros',
+        restaurante_nombre: nombre,
+        restaurante_telefono: telefono || '',
+        restaurante_direccion: direccion,
+        tipo_comida: tipo_comida,
+        estado: 'activo',
         rol: 'restaurante'
       }
     };
 
-    // Si Supabase devuelve session (auto-login), incluirla
     if (authData.session) {
       response.session = {
         access_token: authData.session.access_token,
@@ -232,15 +296,14 @@ export const registerRestaurante = async (req, res) => {
   }
 };
 
-// ✅ REGISTRO REPARTIDOR - VERSIÓN RÁPIDA
+// ✅ REGISTRO REPARTIDOR
 export const registerRepartidor = async (req, res) => {
   try {
     const { email, password, userData } = req.body;
-    const { nombre, telefono, vehiculo } = userData;
+    const { nombres, telefono, tipo_vehiculo, placa } = userData;
 
-    console.log('📝 Registrando repartidor:', { email, nombre, vehiculo });
+    console.log('🏍️ Registrando repartidor:', { email, nombres, tipo_vehiculo });
 
-    // ✅ VALIDAR que se proporcionó contraseña
     if (!password || password.length < 6) {
       return res.status(400).json({ 
         success: false, 
@@ -248,15 +311,13 @@ export const registerRepartidor = async (req, res) => {
       });
     }
 
-    // 1. Crear usuario en Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
-      password: password, // ← Usar la contraseña del usuario
+      password,
       options: {
         data: {
-          nombre,
-          telefono,
-          vehiculo
+          nombres,
+          rol: 'repartidor'
         }
       }
     });
@@ -269,62 +330,70 @@ export const registerRepartidor = async (req, res) => {
       });
     }
 
-    // ✅ DELAY MINIMO
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    // 2. Insertar en tabla 'usuarios' con estado 'activo' (sin esperar admin)
     const { error: userError } = await supabase
-      .from('usuarios')
+      .from('tb_usuarios')
       .insert([{
-        id: authData.user.id,
+        usuario_id: authData.user.id,
+        email: email,
         rol: 'repartidor',
-        estado: 'activo'  // ← Directo a activo, sin esperar admin
+        estado: 'activo'
       }]);
 
     if (userError) {
-      console.error('❌ Error insertando en usuarios:', userError);
+      console.error('❌ Error insertando en tb_usuarios:', userError);
       return res.status(400).json({ 
         success: false, 
         error: 'Error creando perfil de repartidor' 
       });
     }
 
-    // 3. Insertar en tabla 'repartidores'
+    const nombresArray = (nombres || '').split(' ');
+    const repartidor_nombre = nombresArray[0] || '';
+    const repartidor_apellido = nombresArray.slice(1).join(' ') || '';
+
     const { error: repError } = await supabase
-      .from('repartidores')
+      .from('tb_repartidores')
       .insert([{
-        id: authData.user.id,
-        nombre: nombre || '',
-        telefono: telefono || '',
-        tipo_vehiculo: vehiculo || 'Bicicleta'
+        usuario_id: authData.user.id,
+        repartidor_nombre: repartidor_nombre,
+        repartidor_apellido: repartidor_apellido,
+        repartidor_email: email,
+        repartidor_telefono: telefono || '',
+        tipo_vehiculo: tipo_vehiculo || 'Bicicleta',
+        placa: placa || '',
+        es_disponible: false,
+        es_verificado: false,
+        calificacion_promedio: 0
       }]);
 
     if (repError) {
-      console.error('❌ Error insertando en repartidores:', repError);
-      await supabase.from('usuarios').delete().eq('id', authData.user.id);
+      console.error('❌ Error insertando en tb_repartidores:', repError);
+      await supabase.from('tb_usuarios').delete().eq('usuario_id', authData.user.id);
       return res.status(400).json({ 
         success: false, 
         error: 'Error completando registro del repartidor' 
       });
     }
 
-    console.log('✅ Repartidor registrado exitosamente:', authData.user.id);
+    console.log('✅ Repartidor registrado exitosamente');
 
     const response = {
       success: true,
-      message: 'Repartidor registrado exitosamente. Tu cuenta será activada automáticamente en 3 minutos.',
+      message: 'Repartidor registrado correctamente. Por favor revisa tu email para confirmar tu cuenta.',
       user: {
-        id: authData.user.id,
-        repartidor_id: authData.user.id,
+        usuario_id: authData.user.id,
         email: authData.user.email,
-        nombre: nombre || '',
-        telefono: telefono || '',
-        tipo_vehiculo: vehiculo || 'Bicicleta',
+        repartidor_nombre: repartidor_nombre,
+        repartidor_apellido: repartidor_apellido,
+        repartidor_telefono: telefono || '',
+        tipo_vehiculo: tipo_vehiculo || 'Bicicleta',
+        estado: 'activo',
         rol: 'repartidor'
       }
     };
 
-    // Si Supabase devuelve session (auto-login), incluirla
     if (authData.session) {
       response.session = {
         access_token: authData.session.access_token,
@@ -345,7 +414,6 @@ export const registerRepartidor = async (req, res) => {
   }
 };
 
-
 // ✅ LOGIN ÚNICO PARA TODOS LOS ROLES
 export const login = async (req, res) => {
   try {
@@ -353,7 +421,6 @@ export const login = async (req, res) => {
 
     console.log('🔐 Intentando login:', email);
 
-    // 1. Autenticar con Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -362,7 +429,6 @@ export const login = async (req, res) => {
     if (authError) {
       console.error('❌ Error de autenticación:', authError);
       
-      // Detectar si el error es por email no confirmado
       if (authError.code === 'email_not_confirmed') {
         return res.status(401).json({ 
           success: false, 
@@ -377,11 +443,10 @@ export const login = async (req, res) => {
       });
     }
 
-    // 2. Obtener rol desde tabla 'usuarios'
     const { data: usuario, error: userError } = await supabase
-      .from('usuarios')
-      .select('rol')
-      .eq('id', authData.user.id)
+      .from('tb_usuarios')
+      .select('rol, estado')
+      .eq('usuario_id', authData.user.id)
       .single();
 
     if (userError) {
@@ -392,45 +457,52 @@ export const login = async (req, res) => {
       });
     }
 
-    // 3. Obtener datos específicos según el rol
+    // ✅ PERMITIR LOGIN PARA TODOS LOS USUARIOS ACTIVOS (sin restricción de pendiente_aprobacion)
     let userProfile = {};
     let specificId = null;
 
     if (usuario.rol === 'cliente') {
       const { data: cliente } = await supabase
-        .from('clientes')
-        .select('*')
-        .eq('id', authData.user.id)
-        .single();
-      userProfile = { ...cliente };
-    } else if (usuario.rol === 'restaurante') {
-      const { data: restaurante } = await supabase
-        .from('restaurantes')
-        .select('*')
+        .from('tb_clientes')
+        .select('cliente_id, cliente_nombre, cliente_apellido, cliente_email, cliente_telefono, cliente_direccion')
         .eq('usuario_id', authData.user.id)
         .single();
-      userProfile = { ...restaurante };
-      specificId = restaurante?.id;
+      if (cliente) {
+        userProfile = { ...cliente };
+        specificId = cliente.cliente_id;
+      }
+    } else if (usuario.rol === 'restaurante') {
+      const { data: restaurante } = await supabase
+        .from('tb_restaurantes')
+        .select('restaurante_id, restaurante_nombre, restaurante_email, restaurante_telefono, restaurante_direccion')
+        .eq('usuario_id', authData.user.id)
+        .single();
+      if (restaurante) {
+        userProfile = { ...restaurante };
+        specificId = restaurante.restaurante_id;
+      }
     } else if (usuario.rol === 'repartidor') {
       const { data: repartidor } = await supabase
-        .from('repartidores')
-        .select('*')
-        .eq('id', authData.user.id)
+        .from('tb_repartidores')
+        .select('repartidor_id, repartidor_nombre, repartidor_apellido, repartidor_email, repartidor_telefono, tipo_vehiculo')
+        .eq('usuario_id', authData.user.id)
         .single();
-      userProfile = { ...repartidor };
-      specificId = repartidor?.id;
+      if (repartidor) {
+        userProfile = { ...repartidor };
+        specificId = repartidor.repartidor_id;
+      }
     }
 
     console.log('✅ Login exitoso:', { email, rol: usuario.rol });
 
-    // ✅ MODIFICACIÓN: Incluir el session con tokens
     const response = {
       success: true,
       message: 'Login exitoso',
       user: {
-        id: authData.user.id,
+        usuario_id: authData.user.id,
         email: authData.user.email,
         rol: usuario.rol,
+        estado: usuario.estado,
         ...userProfile,
         email_verified: !!authData.user.email_confirmed_at
       },
@@ -442,8 +514,9 @@ export const login = async (req, res) => {
       }
     };
 
-    // ✅ Agregar IDs específicos si aplica
-    if (usuario.rol === 'restaurante' && specificId) {
+    if (usuario.rol === 'cliente' && specificId) {
+      response.user.cliente_id = specificId;
+    } else if (usuario.rol === 'restaurante' && specificId) {
       response.user.restaurante_id = specificId;
     } else if (usuario.rol === 'repartidor' && specificId) {
       response.user.repartidor_id = specificId;
@@ -488,15 +561,15 @@ export const logout = async (req, res) => {
   }
 };
 
-// ✅ OBTENER PERFIL DE USUARIO
+// ✅ OBTENER PERFIL DE USUARIO - CORREGIDO
 export const getProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.usuario_id;
 
     const { data: usuario, error: userError } = await supabase
-      .from('usuarios')
+      .from('tb_usuarios')
       .select('rol')
-      .eq('id', userId)
+      .eq('usuario_id', userId)
       .single();
 
     if (userError) {
@@ -507,38 +580,53 @@ export const getProfile = async (req, res) => {
     }
 
     let userProfile = {};
+    let specificId = null;
 
     if (usuario.rol === 'cliente') {
       const { data: cliente } = await supabase
-        .from('clientes')
+        .from('tb_clientes')
         .select('*')
-        .eq('id', userId)
+        .eq('usuario_id', userId)
         .single();
       userProfile = { ...cliente };
+      specificId = cliente?.cliente_id;
     } else if (usuario.rol === 'restaurante') {
       const { data: restaurante } = await supabase
-        .from('restaurantes')
+        .from('tb_restaurantes')
         .select('*')
-        .eq('id', userId)
+        .eq('usuario_id', userId)
         .single();
       userProfile = { ...restaurante };
+      specificId = restaurante?.restaurante_id;
     } else if (usuario.rol === 'repartidor') {
       const { data: repartidor } = await supabase
-        .from('repartidores')
+        .from('tb_repartidores')
         .select('*')
-        .eq('id', userId)
+        .eq('usuario_id', userId)
         .single();
       userProfile = { ...repartidor };
+      specificId = repartidor?.repartidor_id;
     }
 
-    // ✅ MODIFICACIÓN: Incluir información básica del usuario
+    const responseData = {
+      usuario_id: userId,
+      rol: usuario.rol,
+      ...userProfile
+    };
+
+    if (specificId) {
+      if (usuario.rol === 'cliente') {
+        responseData.cliente_id = specificId;
+      } else if (usuario.rol === 'restaurante') {
+        responseData.restaurante_id = specificId;
+      } else if (usuario.rol === 'repartidor') {
+        responseData.repartidor_id = specificId;
+      }
+    }
+
     res.json({
       success: true,
-      user: {
-        id: userId,
-        rol: usuario.rol,
-        ...userProfile
-      }
+      user: responseData
     });
 
   } catch (error) {
@@ -550,20 +638,19 @@ export const getProfile = async (req, res) => {
   }
 };
 
-// ✅ ACTUALIZAR PERFIL DEL USUARIO
+// ✅ ACTUALIZAR PERFIL DEL USUARIO - COMPLETAMENTE CORREGIDO
 export const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.usuario_id;
     const updates = req.body;
 
     console.log(`📝 Actualizando perfil de usuario ${userId}`);
     console.log('📦 Datos a actualizar:', updates);
 
-    // 1. Obtener usuario actual
     const { data: usuario, error: userError } = await supabase
-      .from('usuarios')
+      .from('tb_usuarios')
       .select('rol')
-      .eq('id', userId)
+      .eq('usuario_id', userId)
       .single();
 
     if (userError || !usuario) {
@@ -573,30 +660,27 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    // 2. Actualizar según el rol
     let table, updateData = {};
     
     if (usuario.rol === 'cliente') {
-      table = 'clientes';
-      const allowedFields = ['nombre', 'email', 'telefono', 'direccion'];
+      table = 'tb_clientes';
+      const allowedFields = ['cliente_nombre', 'cliente_apellido', 'cliente_telefono', 'cliente_direccion'];
       allowedFields.forEach(field => {
         if (field in updates) {
           updateData[field] = updates[field];
         }
       });
     } else if (usuario.rol === 'restaurante') {
-      table = 'restaurantes';
-      const allowedFields = ['nombre', 'descripcion', 'image_url', 'direccion', 'telefono'];
+      table = 'tb_restaurantes';
+      const allowedFields = ['restaurante_nombre', 'restaurante_descripcion', 'restaurante_telefono', 'restaurante_direccion', 'restaurante_url', 'tipo_comida', 'tiempo_delivery', 'delivery_cost'];
       allowedFields.forEach(field => {
         if (field in updates) {
-          // Mapear campo 'imagen' a 'image_url' si es necesario
-          const mappedField = field === 'imagen' ? 'image_url' : field;
-          updateData[mappedField] = updates[field];
+          updateData[field] = updates[field];
         }
       });
     } else if (usuario.rol === 'repartidor') {
-      table = 'repartidores';
-      const allowedFields = ['nombre', 'email', 'telefono', 'vehiculo', 'placa', 'disponible'];
+      table = 'tb_repartidores';
+      const allowedFields = ['repartidor_nombre', 'repartidor_apellido', 'repartidor_telefono', 'tipo_vehiculo', 'placa', 'es_disponible'];
       allowedFields.forEach(field => {
         if (field in updates) {
           updateData[field] = updates[field];
@@ -611,11 +695,10 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    // 3. Actualizar en Supabase
     const { error: updateError } = await supabase
       .from(table)
       .update(updateData)
-      .eq('id', userId);
+      .eq('usuario_id', userId);
 
     if (updateError) {
       console.error('❌ Error actualizando:', updateError);
@@ -631,7 +714,7 @@ export const updateProfile = async (req, res) => {
       success: true,
       message: 'Perfil actualizado exitosamente',
       user: {
-        id: userId,
+        usuario_id: userId,
         rol: usuario.rol,
         ...updateData
       }

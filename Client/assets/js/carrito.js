@@ -90,7 +90,7 @@ class ShoppingCart {
     // Agregar item al carrito
     addItem(product) {
         const existingItem = this.items.find(
-            item => item.name === product.name && 
+            item => item.producto_id === product.producto_id && 
                     item.restaurant === product.restaurant &&
                     item.notes === product.notes
         );
@@ -100,13 +100,15 @@ class ShoppingCart {
         } else {
             this.items.push({
                 id: Date.now(),
+                producto_id: product.producto_id || null,  // ← Agregar ID del producto
                 name: product.name,
                 price: parseFloat(product.price),
                 quantity: product.quantity || 1,
                 image: product.image || 'https://via.placeholder.com/100',
                 restaurant: typeof product.restaurant === 'string' ? product.restaurant : '',
                 restaurante_id: product.restaurante_id || null,  // ← Guardar ID del restaurante
-                notes: product.notes || ''
+                notes: product.notes || '',
+                size: product.size || null  // ← Guardar tamaño
             });
         }
 

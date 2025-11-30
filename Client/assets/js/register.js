@@ -49,11 +49,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('registerForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        
         const formData = {
             email: document.getElementById('email').value.trim(),
             password: document.getElementById('password').value,
             confirmPassword: document.getElementById('confirmPassword').value,
-            nombres: document.getElementById('fullName').value.trim(), // ✅ Cambiar a 'nombres'
+            nombres: `${firstName} ${lastName}`, // ✅ Combinar nombre + apellido
             telefono: document.getElementById('phone').value.trim(),   // ✅ Cambiar a 'telefono'
             direccion: document.getElementById('address').value.trim(), // ✅ Cambiar a 'direccion'
             termsAccepted: document.getElementById('terms').checked,
@@ -78,8 +81,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (formData.telefono && formData.telefono.length !== 9) {
-            showAlert('El teléfono debe tener 9 dígitos', 'danger');
+        // ✅ MEJORA: Validación más flexible para teléfono
+        if (formData.telefono && !/^\d{9}$/.test(formData.telefono)) {
+            showAlert('El teléfono debe tener exactamente 9 dígitos numéricos', 'danger');
             return;
         }
 
@@ -103,12 +107,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('✅ Registro exitoso:', user);
             
-            console.log('✅ Registro exitoso:', user);
-            
-            // ✅ CLIENTES DEBEN VERIFICAR EMAIL ANTES DE PODER INICIAR SESIÓN
-            showAlert(`¡Cuenta creada! Por favor verifica tu email para poder iniciar sesión.`, 'success');
+            // ✅ MOSTRAR TOAST INFORMATIVO
+            showAlert(`¡Cuenta creada! Por favor confirma tu email para continuar.`, 'success');
             
             // ✅ REDIRIGIR AL LOGIN (no al dashboard) - deben verificar email primero
+            // NO abrir ventana pop-up, el usuario confirma desde su email
             setTimeout(() => {
                 window.location.href = '../auth/login.html';
             }, 2000);

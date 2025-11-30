@@ -87,9 +87,9 @@ document.addEventListener('DOMContentLoaded', function() {
             rol: user.rol
         });
         
-        // ✅ VERIFICAR SESSIONSTORA GE ANTES DE REDIRIGIR
-        console.log('📦 sessionStorage ANTES de redirect:', {
-            user_id: sessionStorage.getItem('user_id'),
+        // ✅ MEJORA: Añadir verificación extra de sessionStorage
+        console.log('📦 sessionStorage en redirectAfterLogin:', {
+            usuario_id: sessionStorage.getItem('usuario_id'), // ✅ Cambiar user_id → usuario_id
             user_role: sessionStorage.getItem('user_role'),
             user_email: sessionStorage.getItem('user_email'),
             user_name: sessionStorage.getItem('user_name')

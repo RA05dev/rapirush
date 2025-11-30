@@ -320,11 +320,11 @@
                 if (!token) throw new Error('No autenticado');
 
                 // Obtener todos los pedidos "listo" para que el repartidor pueda asignarse
-                    const response = await fetch(`http://localhost:3000/api/orders/repartidor/${repartidorId}`, {
+                const response = await fetch(`http://localhost:3000/api/orders/repartidor`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
-                    });
+                });
 
                 
                 if (!response.ok) {
@@ -352,7 +352,7 @@
                 const token = localStorage.getItem('supabaseAuthToken');
                 if (!token) throw new Error('No autenticado');
 
-                const response = await fetch('http://localhost:3000/api/orders/repartidor/' + repartidorId, {
+                const response = await fetch('http://localhost:3000/api/orders/repartidor', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -561,10 +561,17 @@
         }
 
         function logout() {
+            console.log('🔒 Logout clickeado en repartidor.html');
             if (confirm('¿Cerrar sesión?')) {
-                sessionStorage.clear();
-                localStorage.removeItem('user_email');
-                window.location.href = '../auth/login.html';
+                // ✅ Usar authManager para logout correcto
+                if (window.authManager) {
+                    window.authManager.logout();
+                } else {
+                    // Fallback si authManager no está disponible
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '../auth/login.html';
+                }
             }
         }
 
@@ -576,9 +583,10 @@
         async function cargarPerfilRepartidor() {
             try {
                 const token = localStorage.getItem('supabaseAuthToken');
-                const repartidorId = repartidorId || window.authManager?.getCurrentUser()?.id;
+                // ✅ Usar la variable global repartidorId (que fue inicializada arriba)
+                const repId = repartidorId || window.authManager?.getCurrentUser()?.id;
                 
-                if (!token || !repartidorId) throw new Error('No autenticado');
+                if (!token || !repId) throw new Error('No autenticado');
 
                 // Para repartidor, usamos el endpoint de usuarios
                 const response = await fetch(`http://localhost:3000/api/auth/profile`, {

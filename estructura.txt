@@ -24,6 +24,7 @@ RapiRush/
 │       │   └── styles.css
 │       ├── js/
 │       │   ├── api/
+│       │   │   └── cache.js
 │       │   │   └── rapiRushAPI.js           # 🔥 Único archivo que llama al backend
 │       │   ├── admin.js
 │       │   ├── agregarestaurante.js

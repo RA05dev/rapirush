@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { supabase } from './src/config/supabaseClient.js';
-import { startApprovalScheduler } from './src/utils/approvalScheduler.js';
+
 import authRoutes from './src/routes/authRoutes.js';
 import restaurantRoutes from './src/routes/restaurantRoutes.js';
 import productRoutes from './src/routes/productRoutes.js';
@@ -54,13 +54,11 @@ app.use(cors({
 
 app.use(express.json());
 
-//RESTAURANTES
-app.use('/api', restaurantRoutes);
-app.use('/api', productRoutes);
-// 👇 USAR RUTAS DE AUTENTICACIÓN
-app.use('/api/auth', authRoutes);
-// 👇 USAR RUTAS DE Pedidos
-app.use('/api/orders', orderRoutes);
+// ✅ CONFIGURACIÓN DE RUTAS (CORREGIDO)
+app.use('/api/restaurants', restaurantRoutes);      // ✅ CORREGIDO: prefijo específico
+app.use('/api/products', productRoutes);            // ✅ CORREGIDO: prefijo específico  
+app.use('/api/auth', authRoutes);                   // ✅ CORRECTO
+app.use('/api/orders', orderRoutes);                // ✅ CORRECTO
 
 // Ruta de prueba del servidor
 app.get('/api/health', (req, res) => {
@@ -79,8 +77,9 @@ app.get('/api/health', (req, res) => {
 app.get('/api/supabase-test', async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('usuarios')
-      .select('*');
+      .from('tb_usuarios')
+      .select('usuario_id, email, rol, estado')
+      .limit(5);
 
     if (error) {
       console.error('❌ Error Supabase:', error);
@@ -115,12 +114,11 @@ app.get('/api/config', (req, res) => {
       port: PORT,
       frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5500',
       supabaseUrl: process.env.SUPABASE_URL ? '✅ Configurado' : '❌ No configurado',
-      supabaseKey: process.env.SUPABASE_ANON_KEY ? '✅ Configurado' : '❌ No configurado',
+      supabaseKey: process.env.SUPABASE_SERVICE_KEY ? '✅ Configurado' : '❌ No configurado',
       nodeEnv: process.env.NODE_ENV || 'development'
     }
   });
 });
-
 
 // Ruta para cualquier otra ruta bajo /api/ que no exista
 app.use('/api', (req, res) => {
@@ -129,8 +127,13 @@ app.use('/api', (req, res) => {
     error: `Ruta API no encontrada: ${req.originalUrl}`,
     availableRoutes: [
       'GET  /api/health',
-      'GET  /api/supabase-test',
+      'GET  /api/supabase-test', 
       'GET  /api/config',
+      'GET  /api/restaurants',
+      'GET  /api/restaurants/:id',
+      'GET  /api/restaurants/search',
+      'GET  /api/products/restaurant/:restaurantId',
+      'GET  /api/products/:id',
       'POST /api/auth/register/cliente',
       'POST /api/auth/register/restaurante',
       'POST /api/auth/register/repartidor',
@@ -138,7 +141,9 @@ app.use('/api', (req, res) => {
       'POST /api/auth/logout',
       'GET  /api/auth/profile',
       'GET  /api/auth/verify',
-      'GET  /api/auth/me'
+      'GET  /api/auth/me',
+      'POST /api/orders/create',
+      'GET  /api/orders/my-orders'
     ]
   });
 });
@@ -156,8 +161,6 @@ app.use((error, req, res, next) => {
 // Ruta raíz
 app.get('/', (req, res) => {
     res.send('<h1>✅ Tu correo fue confirmado correctamente</h1><p>Ya puedes iniciar sesión en RapiRush.</p>');
-
-  
 });
 
 // Iniciar servidor
@@ -166,8 +169,8 @@ app.listen(PORT, () => {
   console.log(`📊 Panel de salud: http://localhost:${PORT}/api/health`);
   console.log(`🔗 Prueba Supabase: http://localhost:${PORT}/api/supabase-test`);
   console.log(`🔐 Rutas Auth disponibles en: http://localhost:${PORT}/api/auth`);
+  console.log(`🍽️  Rutas Restaurantes: http://localhost:${PORT}/api/restaurants`);
+  console.log(`📦 Rutas Productos: http://localhost:${PORT}/api/products`);
+  console.log(`📋 Rutas Pedidos: http://localhost:${PORT}/api/orders`);
   console.log(`⚙️  Configuración: http://localhost:${PORT}/api/config`);
-  
-  // ✅ Scheduler deshabilitado - Restaurantes/Repartidores se crean con estado 'activo' directo
-  // startApprovalScheduler();
 });

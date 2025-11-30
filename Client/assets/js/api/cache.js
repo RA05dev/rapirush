@@ -66,9 +66,14 @@ class CacheManager {
    * Obtener restaurantes del caché
    */
   getRestaurants() {
-    if (this.isValid('restaurants') && this.cache.restaurants) {
-      console.log('📦 Restaurantes obtenidos del CACHÉ (sin llamada a BD)');
+    if (this.isValid('restaurants') && this.cache.restaurants && this.cache.restaurants.length > 0) {
+      console.log(`📦 Restaurantes obtenidos del CACHÉ (${this.cache.restaurants.length} items)`);
       return this.cache.restaurants;
+    }
+    // Si el caché existe pero está vacío, devolveremos null para que se recargue desde API
+    if (this.cache.restaurants && this.cache.restaurants.length === 0) {
+      console.log('⚠️ Caché de restaurantes existe pero está vacío - ignorando');
+      return null;
     }
     return null;
   }

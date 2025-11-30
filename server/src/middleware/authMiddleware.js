@@ -1,7 +1,6 @@
 import { supabase } from '../config/supabaseClient.js';
 
 // ✅ MIDDLEWARE PARA VALIDAR JWT DE SUPABASE
-// ✅ MIDDLEWARE PARA VALIDAR JWT DE SUPABASE - CON DEBUG
 export const authMiddleware = async (req, res, next) => {
   try {
     // Obtener token del header Authorization
@@ -57,9 +56,10 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // ✅ Token válido
+    // ✅ Token válido - también agregar usuario_id como alias de id
     req.user = {
       id: user.id,
+      usuario_id: user.id,  // Alias para compatibilidad con BD
       email: user.email,
       email_confirmed_at: user.email_confirmed_at
     };
@@ -89,9 +89,9 @@ export const verifyRole = (allowedRoles) => {
 
       // Obtener rol del usuario desde la base de datos
       const { data: usuario, error } = await supabase
-        .from('usuarios')
+        .from('tb_usuarios')
         .select('rol')
-        .eq('id', req.user.id)
+        .eq('usuario_id', req.user.id)
         .single();
 
       if (error || !usuario) {
@@ -186,15 +186,16 @@ export const optionalAuth = async (req, res, next) => {
         if (!error && user) {
           req.user = {
             id: user.id,
+            usuario_id: user.id,  // Alias para compatibilidad con BD
             email: user.email,
             email_confirmed_at: user.email_confirmed_at
           };
           
           // Obtener rol si el usuario está autenticado
           const { data: usuario } = await supabase
-            .from('usuarios')
+            .from('tb_usuarios')
             .select('rol')
-            .eq('id', user.id)
+            .eq('usuario_id', user.id)
             .single();
             
           if (usuario) {
@@ -209,5 +210,99 @@ export const optionalAuth = async (req, res, next) => {
     // En middleware opcional, continuamos incluso con errores
     console.warn('⚠️ Error en optionalAuth (continuando):', error);
     next();
+  }
+};
+
+// ✅ NUEVO: MIDDLEWARE PARA VERIFICAR SI EL USUARIO TIENE RESTAURANTE
+export const verifyRestaurantOwner = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Usuario no autenticado'
+      });
+    }
+
+    // Verificar que el usuario es restaurante
+    if (req.user.rol !== 'restaurante') {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado. Solo restaurantes pueden acceder a esta función'
+      });
+    }
+
+    // Obtener restaurante_id del usuario
+    const { data: restaurante, error } = await supabase
+      .from('tb_restaurantes')
+      .select('restaurante_id')
+      .eq('usuario_id', req.user.usuario_id)
+      .single();
+
+    if (error || !restaurante) {
+      return res.status(403).json({
+        success: false,
+        error: 'No tienes un restaurante asociado'
+      });
+    }
+
+    // Agregar restaurante_id al request para uso en controllers
+    req.user.restaurante_id = restaurante.restaurante_id;
+    
+    console.log('✅ Propietario de restaurante verificado:', restaurante.restaurante_id);
+    next();
+
+  } catch (error) {
+    console.error('💥 Error en verifyRestaurantOwner:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error verificando propiedad del restaurante'
+    });
+  }
+};
+
+// ✅ NUEVO: MIDDLEWARE PARA VERIFICAR SI EL USUARIO TIENE REPARTIDOR
+export const verifyRepartidor = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Usuario no autenticado'
+      });
+    }
+
+    // Verificar que el usuario es repartidor
+    if (req.user.rol !== 'repartidor') {
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado. Solo repartidores pueden acceder a esta función'
+      });
+    }
+
+    // Obtener repartidor_id del usuario
+    const { data: repartidor, error } = await supabase
+      .from('tb_repartidores')
+      .select('repartidor_id')
+      .eq('usuario_id', req.user.usuario_id)
+      .single();
+
+    if (error || !repartidor) {
+      return res.status(403).json({
+        success: false,
+        error: 'No tienes un perfil de repartidor asociado'
+      });
+    }
+
+    // Agregar repartidor_id al request para uso en controllers
+    req.user.repartidor_id = repartidor.repartidor_id;
+    
+    console.log('✅ Repartidor verificado:', repartidor.repartidor_id);
+    next();
+
+  } catch (error) {
+    console.error('💥 Error en verifyRepartidor:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error verificando perfil de repartidor'
+    });
   }
 };

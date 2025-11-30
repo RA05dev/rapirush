@@ -10,16 +10,32 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('✅ authManager está listo');
   }
   
-  console.log('📦 authManager:', !!window.authManager);
-  console.log('🔍 isLoggedIn():', window.authManager?.isLoggedIn());
-  console.log('👤 currentUser:', window.authManager?.getCurrentUser());
+  console.log('📦 Verificación de estado:');
+  console.log('   - authManager existe:', !!window.authManager);
+  console.log('   - isLoggedIn():', window.authManager?.isLoggedIn());
+  console.log('   - currentUser:', window.authManager?.getCurrentUser());
+  console.log('   - localStorage.currentUser:', localStorage.getItem('currentUser')?.substring(0, 50) + '...');
+  console.log('   - localStorage.supabaseAuthToken:', !!localStorage.getItem('supabaseAuthToken'));
   
   // ✅ USAR authManager en lugar de sessionStorage viejo
   if (!window.authManager || !authManager.isLoggedIn()) {
     console.log('❌ No hay sesión en authManager, redirigiendo...');
     console.log('💾 localStorage.currentUser:', localStorage.getItem('currentUser'));
     console.log('💾 localStorage.token:', localStorage.getItem('supabaseAuthToken')?.substring(0, 20) + '...');
-    window.location.href = '../auth/login.html';
+    
+  // ✅ MEJORA: Verificación más detallada
+  setTimeout(() => {
+    if (!window.authManager || !authManager.isLoggedIn()) {
+      console.log('🔴 Confirmado: Sin sesión válida. Redirigiendo a login.');
+      console.log('📊 Estado final:', {
+        authManager: !!window.authManager,
+        isLoggedIn: window.authManager?.isLoggedIn?.(),
+        currentUser: window.authManager?.getCurrentUser?.(),
+        token: localStorage.getItem('supabaseAuthToken')?.substring(0, 10) + '...'
+      });
+      window.location.href = '../auth/login.html';
+    }
+  }, 500);
     return;
   }
 
@@ -59,13 +75,8 @@ function initializeUI(user) {
   document.getElementById('profilePhone').value = user.phone || '';
 
   // Configurar logout
-  const logoutBtn = document.getElementById('btnLogout');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      handleLogout();
-    });
-  }
+  // ✅ NOTA: El logout ahora se maneja via onclick en el HTML
+  console.log('✅ Cliente.js inicializado - logout disponible via onclick');
 
   // Configurar guardar perfil
   const saveProfileBtn = document.getElementById('btnSaveProfile');
@@ -141,6 +152,8 @@ function initializeCart() {
 let currentUserOrders = [];  // ← Variable global para guardar pedidos
 async function loadOrders(user) {
   console.log('📦 Cargando pedidos...');
+  console.log('🔍 window.rapiRushAPI existe?', !!window.rapiRushAPI);
+  console.log('🔍 getMyOrders existe?', typeof window.rapiRushAPI?.getMyOrders);
   
   const ACTIVE_STATES = ['recibido', 'preparando', 'camino', 'listo', 'camino', 'llegado'];
   
@@ -149,34 +162,50 @@ async function loadOrders(user) {
   try {
     // ✅ INTENTAR OBTENER DE LA BASE DE DATOS PRIMERO
     console.log('🔄 Intentando obtener pedidos de la base de datos...');
+    
+    if (!window.rapiRushAPI) {
+      throw new Error('rapiRushAPI no está disponible');
+    }
+    
     const result = await window.rapiRushAPI.getMyOrders();
     
-    if (result && result.orders) {
+    console.log('📊 Resultado completo del API:', JSON.stringify(result, null, 2));
+    console.log('📊 result.orders es:', result?.orders);
+    console.log('📊 ¿Es array?', Array.isArray(result?.orders));
+    console.log('📊 Longitud:', result?.orders?.length);
+    
+    if (result && result.orders && Array.isArray(result.orders)) {
       orders = result.orders.map(dbOrder => ({
-        id: dbOrder.id,
-        numero: `#${dbOrder.id.toString().slice(-6)}`,
-        date: dbOrder.creado_en,
+        id: dbOrder.pedido_id,
+        numero: dbOrder.numero_pedido,
+        date: dbOrder.fecha_creacion,
         // ✅ MAPEAR ITEMS CORRECTAMENTE DEL BACKEND
-        items: (dbOrder.pedido_detalle || []).map(item => ({
-          name: item.nombre_item,
+        items: (dbOrder.tb_pedido_detalles || []).map(item => ({
+          name: item.nombre_producto,
           quantity: item.cantidad,
-          price: item.precio,
+          price: item.precio_unitario,
           description: item.descripcion || '',
-          note: item.nota_producto || ''
+          note: item.notas_adicionales || ''
         })),
         subtotal: dbOrder.subtotal,
-        delivery: dbOrder.delivery_fee,
-        discount: dbOrder.descuento,
+        delivery: dbOrder.costo_envio,
+        discount: 0,  // No hay campo descuento en BD, pero puede agregarse después
         total: dbOrder.total,
         status: dbOrder.estado,
-        email: dbOrder.cliente_email,
-        name: dbOrder.cliente_nombre,
+        name: dbOrder.nombre_cliente,
+        phone: dbOrder.telefono_cliente,
         deliveryAddress: dbOrder.direccion_entrega,
-        district: dbOrder.distrito_entrega,
-        deliveryNote: dbOrder.nota_repartidor,
-        paymentMethod: dbOrder.metodo_pago
+        district: dbOrder.distrito,
+        reference: dbOrder.referencia,
+        paymentMethod: dbOrder.metodo_pago,
+        notes: dbOrder.notas_adicionales,
+        restaurant: dbOrder.tb_restaurantes?.restaurante_nombre
       }));
       console.log(`✅ ${orders.length} pedidos obtenidos de la base de datos`);
+      console.log('📊 Primer pedido mapeado:', orders[0]);
+      console.log('📊 Todos los pedidos:', JSON.stringify(orders, null, 2));
+    } else {
+      console.warn('⚠️ result.orders no existe, está vacío o no es un array');
     }
   } catch (error) {
     console.warn('⚠️ Error obteniendo pedidos de BD, usando localStorage:', error);
@@ -394,6 +423,8 @@ function getDefaultTrackingSteps(order) {
 // 🔹 RENDERIZAR ITEM DE PEDIDO - VERSIÓN MEJORADA
 // ==============================
 function renderOrderItem(order, activosContainer, historialContainer, ACTIVE_STATES) {
+  console.log('📦 Renderizando orden:', order);
+  
   const item = document.createElement('a');
   item.className = 'list-group-item list-group-item-action';
   item.href = '#';
