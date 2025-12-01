@@ -320,23 +320,31 @@
                 // ✅ Usar rapiRushAPI en lugar de fetch directo
                 const response = await window.rapiRushAPI.getRepartidorOrders();
                 
-                console.log('📥 Respuesta del servidor:', response);
+                console.log('📥 Respuesta del servidor completa:', response);
+                console.log('📥 Response.data:', response.data);
+                console.log('📥 Response.assignedOrders:', response.assignedOrders);
+                console.log('📥 Response.availableOrders:', response.availableOrders);
                 
                 // ✅ Manejar ambos formatos: nuevo {success, data} y viejo {success, assignedOrders, availableOrders}
                 if (response.data && Array.isArray(response.data)) {
                     // Nuevo formato: todos los órdenes en un array
+                    console.log(`✅ Formato nuevo detectado: ${response.data.length} órdenes`);
                     allOrders = response.data;
                 } else if (response.assignedOrders && response.availableOrders) {
                     // Viejo formato: combinar ambos arrays
+                    console.log(`✅ Formato viejo detectado: ${response.assignedOrders.length} asignados + ${response.availableOrders.length} disponibles`);
                     allOrders = [...(response.assignedOrders || []), ...(response.availableOrders || [])];
                 } else if (response.orders && Array.isArray(response.orders)) {
                     // Alternativo
+                    console.log(`✅ Formato alternativo detectado: ${response.orders.length} órdenes`);
                     allOrders = response.orders;
                 } else {
+                    console.warn('⚠️ Formato desconocido, usando array vacío');
+                    console.warn('⚠️ Estructura de respuesta:', Object.keys(response));
                     allOrders = [];
                 }
                 
-                console.log(`✅ ${allOrders.length} pedidos cargados`);
+                console.log(`✅ Total de ${allOrders.length} pedidos cargados en allOrders`);
                 renderOrders();
             } catch (error) {
                 console.error('❌ Error cargando pedidos:', error);
@@ -591,7 +599,7 @@
         }
 
         // Cargar pedidos al iniciar
-        loadMyOrders();
+        loadOrders();
         cargarPerfilRepartidor(); // ← Cargar perfil también
 
         // ✅ FUNCIONES PARA PERFIL REPARTIDOR
