@@ -312,62 +312,36 @@
             loadOrders();
         });
 
-        // Cargar pedidos disponibles
+        // Cargar pedidos del repartidor usando rapiRushAPI
         async function loadOrders() {
             try {
-                // Obtener token
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
-
-                // Obtener todos los pedidos "listo" para que el repartidor pueda asignarse
-                const response = await fetch(`http://localhost:3000/api/orders/repartidor`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
+                console.log('📦 Cargando pedidos del repartidor...');
                 
-                if (!response.ok) {
-                    // Si no existe endpoint, intentar obtener los propios pedidos del repartidor
-                    await loadMyOrders();
-                    return;
+                // ✅ Usar rapiRushAPI en lugar de fetch directo
+                const response = await window.rapiRushAPI.getRepartidorOrders();
+                
+                console.log('📥 Respuesta del servidor:', response);
+                
+                // ✅ Manejar ambos formatos: nuevo {success, data} y viejo {success, assignedOrders, availableOrders}
+                if (response.data && Array.isArray(response.data)) {
+                    // Nuevo formato: todos los órdenes en un array
+                    allOrders = response.data;
+                } else if (response.assignedOrders && response.availableOrders) {
+                    // Viejo formato: combinar ambos arrays
+                    allOrders = [...(response.assignedOrders || []), ...(response.availableOrders || [])];
+                } else if (response.orders && Array.isArray(response.orders)) {
+                    // Alternativo
+                    allOrders = response.orders;
+                } else {
+                    allOrders = [];
                 }
                 
-                const data = await response.json();
-                allOrders = data.orders || [];
-                console.log('📦 Pedidos disponibles:', allOrders);
-                
+                console.log(`✅ ${allOrders.length} pedidos cargados`);
                 renderOrders();
             } catch (error) {
-                console.error('❌ Error:', error);
-                // Fallback: cargar solo los propios pedidos
-                await loadMyOrders();
-            }
-        }
-
-        // Cargar pedidos asignados al repartidor
-        async function loadMyOrders() {
-            try {
-                // Obtener token
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
-
-                const response = await fetch('http://localhost:3000/api/orders/repartidor', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!response.ok) throw new Error('Error al cargar pedidos');
+                console.error('❌ Error cargando pedidos:', error);
                 
-                const data = await response.json();
-                allOrders = data.orders || [];
-                console.log('📦 Mis pedidos:', allOrders);
-                
-                renderOrders();
-            } catch (error) {
-                console.error('❌ Error:', error);
-                
-                // ✅ Solo mostrar el error si hace más de 30 segundos que no se muestra
+                // ✅ Solo mostrar error cada 30 segundos
                 const now = Date.now();
                 if (now - lastErrorTime > 30000) {
                     showAlert('Error al cargar pedidos: ' + error.message, 'danger');
@@ -378,9 +352,12 @@
 
         // Renderizar pedidos por estado
         function renderOrders() {
-            const listos = allOrders.filter(o => o.status === 'listo' || o.estado === 'listo');
-            const encamino = allOrders.filter(o => o.status === 'en camino' || o.estado === 'en camino');
-            const entregados = allOrders.filter(o => o.status === 'entregado' || o.estado === 'entregado' || o.status === 'llegado' || o.estado === 'llegado');
+            // ✅ Filtrar por estado correcto (en BD es 'listo', 'camino', 'entregado', 'llegado')
+            const listos = allOrders.filter(o => (o.estado === 'listo') && !o.repartidor_id);
+            const encamino = allOrders.filter(o => ['camino', 'llegado'].includes(o.estado) && o.repartidor_id);
+            const entregados = allOrders.filter(o => o.estado === 'entregado');
+
+            console.log(`📊 Filtrados: ${listos.length} listos, ${encamino.length} en camino, ${entregados.length} entregados`);
 
             // Actualizar contadores
             document.getElementById('listosCount').textContent = listos.length;
@@ -412,52 +389,66 @@
                 return;
             }
 
-            container.innerHTML = orders.map(order => `
+            container.innerHTML = orders.map(order => {
+                // ✅ Extraer datos correctamente de la estructura anidada
+                const restaurante = Array.isArray(order.tb_restaurantes) ? order.tb_restaurantes[0] : order.tb_restaurantes;
+                const cliente = Array.isArray(order.tb_clientes) ? order.tb_clientes[0] : order.tb_clientes;
+                
+                const clienteName = cliente?.cliente_nombre || 'N/A';
+                const clientePhone = cliente?.cliente_telefono || 'N/A';
+                const direccion = order.direccion_entrega || 'N/A';
+                
+                return `
                 <div class="col-md-6 mb-4">
                     <div class="card border-left border-info">
                         <div class="card-body">
                             <h6 class="card-title">
-                                <strong>Pedido #${order.id.toString().slice(-6)}</strong>
-                                <span class="badge bg-info">${order.status || order.estado}</span>
+                                <strong>Pedido #${order.pedido_id}</strong>
+                                <span class="badge bg-info">${order.estado}</span>
                             </h6>
-                            <p class="mb-2"><strong>Cliente:</strong> ${order.cliente_nombre || 'N/A'}</p>
-                            <p class="mb-2"><strong>Dirección:</strong> ${order.delivery_address || order.direccion_entrega || 'N/A'}</p>
-                            <p class="mb-2"><strong>Teléfono:</strong> ${order.cliente_telefono || 'N/A'}</p>
+                            <p class="mb-2"><strong>Cliente:</strong> ${clienteName}</p>
+                            <p class="mb-2"><strong>Dirección:</strong> ${direccion}</p>
+                            <p class="mb-2"><strong>Teléfono:</strong> ${clientePhone}</p>
                             <p class="mb-3"><strong>Total:</strong> S/. ${(order.total || 0).toFixed(2)}</p>
-                            <button class="btn btn-sm btn-info" onclick="showOrderDetail(${order.id})">
+                            <button class="btn btn-sm btn-info" onclick="showOrderDetail(${order.pedido_id})">
                                 Ver Detalles
                             </button>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         // Mostrar detalles del pedido
         async function showOrderDetail(orderId) {
             try {
-                const response = await fetch('http://localhost:3000/api/orders/' + orderId);
-                if (!response.ok) throw new Error('Error al cargar detalles');
-                
-                const order = await response.json();
+                // ✅ Usar rapiRushAPI
+                const order = await window.rapiRushAPI.getOrderById(orderId);
                 const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+                
+                // ✅ Extraer datos correctamente
+                const restaurante = Array.isArray(order.tb_restaurantes) ? order.tb_restaurantes[0] : order.tb_restaurantes;
+                const cliente = Array.isArray(order.tb_clientes) ? order.tb_clientes[0] : order.tb_clientes;
                 
                 // Renderizar detalles
                 const detailBody = document.getElementById('orderDetailBody');
                 let html = `
                     <div class="mb-3">
                         <h6 class="text-primary">📋 Información del Pedido</h6>
-                        <p class="mb-1"><strong>Cliente:</strong> ${order.cliente_nombre || 'N/A'}</p>
-                        <p class="mb-1"><strong>Teléfono:</strong> ${order.cliente_telefono || 'N/A'}</p>
-                        <p class="mb-3"><strong>Estado:</strong> <span class="badge bg-info">${order.status || order.estado}</span></p>
+                        <p class="mb-1"><strong>Cliente:</strong> ${cliente?.cliente_nombre || 'N/A'}</p>
+                        <p class="mb-1"><strong>Teléfono:</strong> ${cliente?.cliente_telefono || 'N/A'}</p>
+                        <p class="mb-3"><strong>Estado:</strong> <span class="badge bg-info">${order.estado}</span></p>
                     </div>
                     
                     <div class="mb-3">
-                        <h6 class="text-primary">🏠 Entrega</h6>
-                        <p class="mb-1"><strong>Dirección:</strong> ${order.delivery_address || order.direccion_entrega || 'N/A'}</p>
-                        <p class="mb-1"><strong>Distrito:</strong> ${order.district || order.distrito_entrega || 'N/A'}</p>
-                        ${order.referencia_entrega ? `<p class="mb-1"><strong>🔑 Referencia:</strong> ${order.referencia_entrega}</p>` : ''}
-                        ${order.nota_repartidor ? `<p class="mb-3"><strong>📝 Nota del Cliente:</strong> <em>"${order.nota_repartidor}"</em></p>` : ''}
+                        <h6 class="text-primary">🍽️ Restaurante</h6>
+                        <p class="mb-1"><strong>Nombre:</strong> ${restaurante?.restaurante_nombre || 'N/A'}</p>
+                        <p class="mb-3"><strong>Dirección:</strong> ${restaurante?.restaurante_direccion || 'N/A'}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-primary">🚚 Entrega</h6>
+                        <p class="mb-3"><strong>Dirección:</strong> ${order.direccion_entrega || 'N/A'}</p>
                     </div>
                     
                     <div class="mb-3">
@@ -465,16 +456,17 @@
                         <div class="list-group">`;
                 
                 // Agregar items
-                if (order.items && Array.isArray(order.items)) {
-                    order.items.forEach(item => {
+                if (order.tb_pedido_detalles && Array.isArray(order.tb_pedido_detalles)) {
+                    order.tb_pedido_detalles.forEach(item => {
+                        const subtotal = (item.precio_unitario || 0) * (item.cantidad || 0);
                         html += `
                             <div class="list-group-item">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h6 class="mb-0">${item.name || item.nombre_item}</h6>
-                                        <small class="text-muted">${item.quantity || item.cantidad}x</small>
+                                        <h6 class="mb-0">${item.nombre_item || 'Item'}</h6>
+                                        <small class="text-muted">${item.cantidad || 1}x @ S/. ${(item.precio_unitario || 0).toFixed(2)}</small>
                                     </div>
-                                    <span class="fw-bold">S/. ${((item.price || item.precio) * (item.quantity || item.cantidad)).toFixed(2)}</span>
+                                    <span class="fw-bold">S/. ${subtotal.toFixed(2)}</span>
                                 </div>
                             </div>`;
                     });
@@ -488,17 +480,17 @@
                 const footer = document.getElementById('orderDetailFooter');
                 footer.innerHTML = '';
 
-                const status = (order.status || order.estado || '').toLowerCase();
+                const estado = (order.estado || '').toLowerCase();
 
-                if (status === 'listo') {
+                if (estado === 'listo') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-warning" onclick="updateOrderStatus(${orderId}, 'en_camino')">
+                        <button type="button" class="btn btn-warning" onclick="recogerPedido(${orderId})">
                             🚴 Recoger Pedido
                         </button>`;
-                } else if (status === 'en_camino' || status === 'en camino') {
+                } else if (estado === 'camino' || estado === 'llegado') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-success" onclick="updateOrderStatus(${orderId}, 'llegado')">
-                            📍 Confirmar Llegada
+                        <button type="button" class="btn btn-success" onclick="confirmarEntrega(${orderId})">
+                            📍 Confirmar Entrega
                         </button>`;
                 }
 
@@ -511,36 +503,59 @@
             }
         }
 
-        // Actualizar estado del pedido
+        // Recoger pedido (asignar repartidor y cambiar a 'camino')
+        async function recogerPedido(orderId) {
+            if (!confirm('¿Recoger este pedido?')) return;
+
+            try {
+                console.log(`🚴 Recogiendo pedido ${orderId}`);
+                // ✅ assignRepartidor atomicamente asigna repartidor_id y cambia estado a 'camino'
+                await window.rapiRushAPI.assignRepartidor(orderId);
+                
+                showAlert('✅ Pedido recogido - Estado cambiado a En Camino', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+                
+                // Recargar pedidos
+                await loadOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        // Confirmar entrega
+        async function confirmarEntrega(orderId) {
+            if (!confirm('¿Confirmar entrega de este pedido?')) return;
+
+            try {
+                console.log(`✅ Confirmando entrega de pedido ${orderId}`);
+                // ✅ Cambiar estado a 'entregado'
+                await window.rapiRushAPI.updateOrderStatus(orderId, 'entregado');
+                
+                showAlert('✅ Pedido entregado exitosamente', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+                
+                // Recargar pedidos
+                await loadOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        // Actualizar estado del pedido (DEPRECATED - usar recogerPedido y confirmarEntrega)
         async function updateOrderStatus(orderId, newStatus) {
             if (!confirm(`¿Cambiar estado a "${newStatus}"?`)) return;
 
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
                 console.log(`🚀 Actualizando orden ${orderId} a estado: ${newStatus}`);
-                console.log(`📍 URL: http://localhost:3000/api/orders/${orderId}/status`);
-                console.log(`📦 Body:`, { estado: newStatus });
+                await window.rapiRushAPI.updateOrderStatus(orderId, newStatus);
                 
-                const response = await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ estado: newStatus })
-                });
-
-                console.log(`📊 Response status: ${response.status}`);
-                const data = await response.json();
-                console.log(`📊 Response data:`, data);
-
-                if (!response.ok) throw new Error(data.error || 'Error al actualizar');
-
                 showAlert(`✅ Pedido actualizado a: ${newStatus}`, 'success');
                 bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
                 
                 // Recargar pedidos
-                await loadMyOrders();
+                await loadOrders();
             } catch (error) {
                 console.error('❌ Error:', error);
                 showAlert('Error: ' + error.message, 'danger');
@@ -663,7 +678,7 @@
         }
 
         // Recargar cada 10 segundos
-        setInterval(loadMyOrders, 10000);
+        setInterval(loadOrders, 10000);
     </script>
 </body>
 </html>
