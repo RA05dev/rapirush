@@ -71,7 +71,7 @@ class RapiRushAPI {
       return data;
 
     } catch (error) {
-      console.error(`💥 API Error en ${endpoint}:`, error);
+      console.warn(`💥 API Error en ${endpoint}:`, error);
       throw error;
     }
   }
@@ -554,7 +554,7 @@ class RapiRushAPI {
 
       return response;
     } catch (error) {
-      console.error('❌ Error asignando repartidor:', error);
+      console.warn('❌ Error asignando repartidor:', error);
       throw error;
     }
   }

@@ -14,7 +14,7 @@
         <div class="container">
             <a class="navbar-brand fw-bold text-warning d-flex align-items-center" href="../index.html">
                 <img src="../assets/Img/icon.png" alt="Logo de RapiRush" class="me-2" style="height: 40px;">
-                <h3 class="m-0">🚚 RapiRush</h3>
+                <h3 class="m-0">RapiRush</h3>
             </a>
 
             
@@ -297,6 +297,7 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/notificationManager.js"></script>
     <script src="../assets/js/api/rapiRushAPI.js"></script>
     <script src="../assets/js/api/cache.js"></script>
     <script src="../assets/js/authManager.js"></script>
@@ -368,6 +369,9 @@
             console.log('✅ Autenticación verificada. Repartidor ID:', repartidorId);
             document.getElementById('userName').textContent = repartidorName || 'Repartidor';
 
+            // ✅ CARGAR PERFIL DEL REPARTIDOR (para obtener es_disponible)
+            await cargarPerfilRepartidor();
+            
             // Cargar pedidos del repartidor
             loadOrders();
         });
@@ -435,8 +439,8 @@
             document.getElementById('entregadosCount').textContent = entregados.length;
             document.getElementById('entregadosTabCount').textContent = entregados.length;
 
-            // Calcular ganancia
-            const ganancia = (listos.concat(encamino).concat(entregados).reduce((sum, o) => sum + (o.total || 0), 0)) * 0.1; // 10% comisión
+            // Calcular ganancia - SOLO DE PEDIDOS ENTREGADOS
+            const ganancia = entregados.reduce((sum, o) => sum + (o.total || 0), 0) * 0.1; // 10% comisión solo de entregados
             document.getElementById('gananciaCount').textContent = ganancia.toFixed(2);
 
             // Renderizar cada grupo
@@ -633,16 +637,7 @@
         }
 
         function showAlert(message, type) {
-            const alertContainer = document.getElementById('alertContainer');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            alertContainer.appendChild(alertDiv);
-
-            setTimeout(() => alertDiv.remove(), 5000);
+            window.globalShowAlert(message, type, 5000);
         }
 
         function logout() {

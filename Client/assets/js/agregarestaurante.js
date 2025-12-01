@@ -97,26 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showAlert(message, type) {
         console.log(`📢 Mostrando alerta: ${message}`);
-        
-        const existingAlert = document.querySelector('.alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        form.prepend(alertDiv);
-
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
+        window.globalShowAlert(message, type, 5000);
     }
 
     // ✅ FUNCIÓN PARA MOSTRAR MODAL DE ÉXITO

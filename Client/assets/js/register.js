@@ -127,26 +127,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Función para mostrar alertas
+    // Función para mostrar alertas - USAR ALERTA GLOBAL
     function showAlert(message, type) {
-        const existingAlert = document.querySelector('.alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        document.querySelector('#registerForm').prepend(alertDiv);
-
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
+        window.globalShowAlert(message, type, 5000);
     }
 });
