@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Directo - Carga de Órdenes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Courier New', monospace; background: #1e1e1e; color: #fff; }
+        .console { background: #000; padding: 15px; border-radius: 8px; margin: 20px 0; max-height: 400px; overflow-y: auto; }
+        .log { margin: 5px 0; padding: 5px; }
+        .log-info { color: #00d4ff; }
+        .log-success { color: #00ff00; }
+        .log-error { color: #ff4444; }
+        .log-warn { color: #ffaa00; }
+        .controls { margin: 20px 0; }
+        .btn { margin: 5px; }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h1>🧪 Test Directo: Carga de Órdenes</h1>
+    <p class="text-muted">Este archivo testa directamente el flujo de carga de órdenes</p>
+
+    <div class="controls">
+        <button class="btn btn-primary" onclick="testCompleto()">▶️ Test Completo</button>
+        <button class="btn btn-warning" onclick="clearConsole()">🗑️ Limpiar Consola</button>
+    </div>
+
+    <div class="console" id="console"></div>
+
+    <div class="mt-4">
+        <h3>Resultado del Test:</h3>
+        <div id="resultado" class="alert alert-info">Espera a que se complete el test...</div>
+    </div>
+</div>
+
+<script>
+const consoleDiv = document.getElementById('console');
+const resultadoDiv = document.getElementById('resultado');
+
+function log(mensaje, tipo = 'info') {
+    const logEl = document.createElement('div');
+    logEl.className = `log log-${tipo}`;
+    
+    let emoji = '📝';
+    if (tipo === 'success') emoji = '✅';
+    if (tipo === 'error') emoji = '❌';
+    if (tipo === 'warn') emoji = '⚠️';
+    if (tipo === 'info') emoji = 'ℹ️';
+    
+    logEl.textContent = `${emoji} ${mensaje}`;
+    consoleDiv.appendChild(logEl);
+    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
+}
+
+function clearConsole() {
+    consoleDiv.innerHTML = '';
+}
+
+async function testCompleto() {
+    clearConsole();
+    log('Iniciando test completo...', 'info');
+    
+    try {
+        // 1. Verificar conexión al servidor
+        log('Verificando conexión al servidor en puerto 3000...', 'info');
+        const healthCheck = await fetch('http://localhost:3000/api/health', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        }).catch(() => null);
+        
+        if (!healthCheck) {
+            log('Servidor no responde en http://localhost:3000', 'error');
+            log('⏯️ Inicia el servidor: cd server && npm start', 'warn');
+            return;
+        }
+        log('Servidor está activo', 'success');
+
+        // 2. Hacer login
+        log('Autenticando usuario...', 'info');
+        const loginRes = await fetch('http://localhost:3000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: 'texamo1116@gmail.com',
+                password: '123456'
+            })
+        });
+
+        const loginData = await loginRes.json();
+        if (!loginData.success) {
+            log(`Login falló: ${loginData.error}`, 'error');
+            return;
+        }
+        log(`Login exitoso para: ${loginData.user.name}`, 'success');
+        const token = loginData.token;
+        log(`Token obtenido (${token.length} caracteres)`, 'success');
+
+        // 3. Obtener órdenes
+        log('Obteniendo órdenes del usuario...', 'info');
+        const ordersRes = await fetch('http://localhost:3000/api/orders/my-orders', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const ordersData = await ordersRes.json();
+        log(`Respuesta del servidor recibida`, 'success');
+        log(`Success: ${ordersData.success}`, ordersData.success ? 'success' : 'error');
+
+        if (!ordersData.success) {
+            log(`Error: ${ordersData.error}`, 'error');
+            return;
+        }
+
+        const orders = ordersData.orders || [];
+        log(`Total de órdenes: ${orders.length}`, 'success');
+
+        if (orders.length === 0) {
+            log('⚠️ El usuario no tiene órdenes aún', 'warn');
+            log('Crea una orden primero desde la página de restaurantes', 'info');
+            return;
+        }
+
+        // 4. Mostrar primera orden
+        log(`Analizando primera orden...`, 'info');
+        const firstOrder = orders[0];
+        log(`ID: ${firstOrder.pedido_id}`, 'info');
+        log(`Número: ${firstOrder.numero_pedido}`, 'info');
+        log(`Estado: ${firstOrder.estado}`, 'info');
+        log(`Total: S/. ${firstOrder.total}`, 'info');
+        log(`Detalles: ${firstOrder.tb_pedido_detalles?.length || 0} items`, 'info');
+        log(`Restaurante: ${firstOrder.tb_restaurantes?.restaurante_nombre || 'N/A'}`, 'info');
+
+        // 5. Verificar estructura de datos
+        log('Verificando estructura de datos...', 'info');
+        const expectedFields = ['pedido_id', 'numero_pedido', 'estado', 'fecha_creacion', 'total', 'tb_pedido_detalles', 'tb_restaurantes'];
+        let allFieldsOK = true;
+        for (const field of expectedFields) {
+            const exists = field in firstOrder;
+            log(`  - ${field}: ${exists ? '✓' : '✗'}`, exists ? 'success' : 'error');
+            if (!exists) allFieldsOK = false;
+        }
+
+        if (allFieldsOK) {
+            log('✅ Estructura de datos es correcta', 'success');
+            log('¡El problema NO está en el backend!', 'success');
+            resultadoDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h4>✅ Backend está funcionando correctamente</h4>
+                    <p>El servidor devuelve órdenes con la estructura correcta.</p>
+                    <p><strong>El problema está en el frontend:</strong></p>
+                    <ul>
+                        <li>cliente.js probablemente no se está ejecutando</li>
+                        <li>O los contenedores DOM no existen</li>
+                        <li>O hay un error no capturado</li>
+                    </ul>
+                    <p><strong>Próximos pasos:</strong></p>
+                    <ol>
+                        <li>Abre http://localhost:5500/Client/dashboard/cliente.html</li>
+                        <li>Presiona F12 para ver la consola</li>
+                        <li>Busca mensajes que empiezan con 🚀 o ❌</li>
+                    </ol>
+                </div>
+            `;
+        } else {
+            log('❌ Campos faltantes en la respuesta', 'error');
+            resultadoDiv.innerHTML = '<div class="alert alert-danger">Los datos no tienen la estructura esperada</div>';
+        }
+
+    } catch (error) {
+        log(`Error no esperado: ${error.message}`, 'error');
+        log(`Stack: ${error.stack}`, 'error');
+        resultadoDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    }
+}
+</script>
+</body>
+</html>

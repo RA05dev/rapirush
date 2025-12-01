@@ -20,12 +20,12 @@ INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_pre
 
 -- Bebidas pizzería: 500ml, 1L, 1.5L (1.0, 1.6, 2.4)
 INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_precio, es_disponible) VALUES
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = '10000000-0000-0000-0000-000000000001' LIMIT 1), '500ml', 1.0, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = '10000000-0000-0000-0000-000000000001' LIMIT 1), '1L', 1.6, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = '10000000-0000-0000-0000-000000000001' LIMIT 1), '1.5L', 2.4, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = '10000000-0000-0000-0000-000000000001' LIMIT 1), '500ml', 1.0, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = '10000000-0000-0000-0000-000000000001' LIMIT 1), '1L', 1.6, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = '10000000-0000-0000-0000-000000000001' LIMIT 1), '1.5L', 2.4, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = 'f1a0041c-8ee3-4b89-9eb7-65a964321ac1' LIMIT 1), '500ml', 1.0, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = 'f1a0041c-8ee3-4b89-9eb7-65a964321ac1' LIMIT 1), '1L', 1.6, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = 'f1a0041c-8ee3-4b89-9eb7-65a964321ac1' LIMIT 1), '1.5L', 2.4, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = 'f1a0041c-8ee3-4b89-9eb7-65a964321ac1' LIMIT 1), '500ml', 1.0, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = 'f1a0041c-8ee3-4b89-9eb7-65a964321ac1' LIMIT 1), '1L', 1.6, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = 'f1a0041c-8ee3-4b89-9eb7-65a964321ac1' LIMIT 1), '1.5L', 2.4, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Agua San Luis' LIMIT 1), '500ml', 1.0, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Agua San Luis' LIMIT 1), '1L', 1.667, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Agua San Luis' LIMIT 1), '2.5L', 2.667, true),
@@ -62,9 +62,9 @@ INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_pre
 
 -- Complementos Burger House: regular/grande/familiar
 INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_precio, es_disponible) VALUES
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = '10000000-0000-0000-0000-000000000002' LIMIT 1), 'regular', 1.0, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = '10000000-0000-0000-0000-000000000002' LIMIT 1), 'grande', 1.5, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = '10000000-0000-0000-0000-000000000002' LIMIT 1), 'familiar', 1.875, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = 'ccf55b13-72ef-4a2b-8846-64fcbf2f87ca' LIMIT 1), 'regular', 1.0, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = 'ccf55b13-72ef-4a2b-8846-64fcbf2f87ca' LIMIT 1), 'grande', 1.5, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = 'ccf55b13-72ef-4a2b-8846-64fcbf2f87ca' LIMIT 1), 'familiar', 1.875, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Aros de Cebolla' LIMIT 1), 'regular', 1.0, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Aros de Cebolla' LIMIT 1), 'grande', 1.4, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Aros de Cebolla' LIMIT 1), 'familiar', 1.8, true),
@@ -74,9 +74,9 @@ INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_pre
 
 -- Bebidas Burger House
 INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_precio, es_disponible) VALUES
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = '10000000-0000-0000-0000-000000000002' LIMIT 1), '500ml', 1.0, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = '10000000-0000-0000-0000-000000000002' LIMIT 1), '1L', 1.6, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = '10000000-0000-0000-0000-000000000002' LIMIT 1), '1.5L', 2.4, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = 'ccf55b13-72ef-4a2b-8846-64fcbf2f87ca' LIMIT 1), '500ml', 1.0, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = 'ccf55b13-72ef-4a2b-8846-64fcbf2f87ca' LIMIT 1), '1L', 1.6, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Coca Cola' AND restaurante_id = 'ccf55b13-72ef-4a2b-8846-64fcbf2f87ca' LIMIT 1), '1.5L', 2.4, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Milkshake' LIMIT 1), 'regular', 1.0, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Milkshake' LIMIT 1), 'grande', 1.25, true);
 
@@ -154,9 +154,9 @@ INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_pre
 
 -- Complementos Pollo Peruano
 INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_precio, es_disponible) VALUES
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = '10000000-0000-0000-0000-000000000005' LIMIT 1), 'personal', 1.0, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = '10000000-0000-0000-0000-000000000005' LIMIT 1), 'mediana', 1.5, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = '10000000-0000-0000-0000-000000000005' LIMIT 1), 'familiar', 2.25, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = '0d9aefe0-1d47-44ce-8d10-9bad5722db2c' LIMIT 1), 'personal', 1.0, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = '0d9aefe0-1d47-44ce-8d10-9bad5722db2c' LIMIT 1), 'mediana', 1.5, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Papas Fritas' AND restaurante_id = '0d9aefe0-1d47-44ce-8d10-9bad5722db2c' LIMIT 1), 'familiar', 2.25, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Ensalada Mixta' LIMIT 1), 'personal', 1.0, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Ensalada Mixta' LIMIT 1), 'familiar', 2.0, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Cremas' LIMIT 1), '2oz', 1.0, true),
@@ -164,9 +164,9 @@ INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_pre
 
 -- Bebidas Pollo Peruano
 INSERT INTO tb_producto_tamaños (producto_id, nombre_tamaño, multiplicador_precio, es_disponible) VALUES
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = '10000000-0000-0000-0000-000000000005' LIMIT 1), '500ml', 1.0, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = '10000000-0000-0000-0000-000000000005' LIMIT 1), '1L', 1.6, true),
-((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = '10000000-0000-0000-0000-000000000005' LIMIT 1), '1.5L', 2.4, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = '0d9aefe0-1d47-44ce-8d10-9bad5722db2c' LIMIT 1), '500ml', 1.0, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = '0d9aefe0-1d47-44ce-8d10-9bad5722db2c' LIMIT 1), '1L', 1.6, true),
+((SELECT producto_id FROM tb_productos WHERE nombre = 'Inca Kola' AND restaurante_id = '0d9aefe0-1d47-44ce-8d10-9bad5722db2c' LIMIT 1), '1.5L', 2.4, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Chicha Morada' LIMIT 1), '500ml', 1.0, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Chicha Morada' LIMIT 1), '1L', 1.667, true),
 ((SELECT producto_id FROM tb_productos WHERE nombre = 'Chicha Morada' LIMIT 1), '1.5L', 2.333, true);

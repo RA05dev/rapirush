@@ -275,22 +275,11 @@ export const getOrdersByUser = async (req, res) => {
 // ✅ OBTENER PEDIDO ESPECÍFICO
 export const getOrderById = async (req, res) => {
   try {
-    const { pedidoId } = req.params;
+    const { orderId } = req.params;
     const userId = req.user.usuario_id;
+    const userRol = req.user.rol;
 
-    // Obtener cliente_id
-    const { data: clientData } = await supabase
-      .from('tb_clientes')
-      .select('cliente_id')
-      .eq('usuario_id', userId)
-      .single();
-
-    if (!clientData) {
-      return res.status(404).json({
-        success: false,
-        error: 'Cliente no encontrado'
-      });
-    }
+    console.log('📋 Obteniendo pedido:', { orderId, userId, userRol });
 
     const { data: order, error } = await supabase
       .from('tb_pedidos')
@@ -300,7 +289,11 @@ export const getOrderById = async (req, res) => {
         tb_restaurantes(
           restaurante_nombre,
           restaurante_telefono,
-          restaurante_direccion
+          restaurante_direccion,
+          usuario_id
+        ),
+        tb_clientes(
+          usuario_id
         ),
         tb_pedido_rastreo(
           estado_nuevo,
@@ -308,16 +301,45 @@ export const getOrderById = async (req, res) => {
           fecha_cambio
         )
       `)
-      .eq('pedido_id', pedidoId)
-      .eq('cliente_id', clientData.cliente_id)
+      .eq('pedido_id', orderId)
       .single();
 
     if (error || !order) {
+      console.error('❌ Pedido no encontrado:', orderId);
       return res.status(404).json({
         success: false,
         error: 'Pedido no encontrado'
       });
     }
+
+    // ✅ Verificar permisos según rol
+    if (userRol === 'cliente') {
+      // Cliente solo puede ver sus propios pedidos
+      if (order.tb_clientes[0]?.usuario_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'No tienes permiso para ver este pedido'
+        });
+      }
+    } else if (userRol === 'restaurante') {
+      // Restaurante solo puede ver pedidos de su restaurante
+      if (order.tb_restaurantes[0]?.usuario_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'No tienes permiso para ver este pedido'
+        });
+      }
+    } else if (userRol === 'repartidor') {
+      // Repartidor solo puede ver pedidos asignados a él
+      if (order.repartidor_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'No tienes permiso para ver este pedido'
+        });
+      }
+    }
+
+    console.log('✅ Pedido encontrado:', orderId);
 
     res.json({
       success: true,
@@ -332,6 +354,7 @@ export const getOrderById = async (req, res) => {
     });
   }
 };
+
 
 // ✅ OBTENER PEDIDOS DEL RESTAURANTE
 export const getOrdersByRestaurant = async (req, res) => {
@@ -489,12 +512,12 @@ export const getOrdersByRepartidor = async (req, res) => {
 // ✅ ACTUALIZAR ESTADO DE PEDIDO (RESTAURANTE)
 export const updateOrderStatus = async (req, res) => {
   try {
-    const { pedidoId } = req.params;
+    const { orderId } = req.params;
     const { nuevoEstado } = req.body;
     const userId = req.user.usuario_id;
     const userRol = req.user.rol;
 
-    console.log(`📝 Actualizando pedido ${pedidoId} a: ${nuevoEstado} por ${userRol}`);
+    console.log(`📝 Actualizando pedido ${orderId} a: ${nuevoEstado} por ${userRol}`);
 
     // Estados permitidos
     const allowedStates = ['recibido', 'aceptado', 'preparando', 'listo', 'camino', 'llegado', 'entregado', 'cancelado'];
@@ -514,7 +537,7 @@ export const updateOrderStatus = async (req, res) => {
           usuario_id
         )
       `)
-      .eq('pedido_id', pedidoId)
+      .eq('pedido_id', orderId)
       .single();
 
     if (fetchError || !order) {
@@ -558,7 +581,7 @@ export const updateOrderStatus = async (req, res) => {
     const { error: updateError } = await supabase
       .from('tb_pedidos')
       .update(updateData)
-      .eq('pedido_id', pedidoId);
+      .eq('pedido_id', orderId);
 
     if (updateError) {
       console.error('❌ Error actualizando pedido:', updateError);
@@ -569,15 +592,15 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     // ✅ 3. Crear registro en tb_pedido_rastreo
-    await createTrackingRecord(pedidoId, estadoAnterior, nuevoEstado, userRol);
+    await createTrackingRecord(orderId, estadoAnterior, nuevoEstado, userRol);
 
-    console.log(`✅ Pedido ${pedidoId} actualizado a: ${nuevoEstado}`);
+    console.log(`✅ Pedido ${orderId} actualizado a: ${nuevoEstado}`);
 
     res.json({
       success: true,
       message: `Pedido actualizado a: ${nuevoEstado}`,
       order: {
-        pedido_id: pedidoId,
+        pedido_id: orderId,
         estado: nuevoEstado
       }
     });
@@ -594,10 +617,10 @@ export const updateOrderStatus = async (req, res) => {
 // ✅ ASIGNAR REPARTIDOR A PEDIDO
 export const assignRepartidor = async (req, res) => {
   try {
-    const { pedidoId } = req.params;
+    const { orderId } = req.params;
     const userId = req.user.usuario_id;
 
-    console.log(`🚴 Asignando repartidor ${userId} al pedido ${pedidoId}`);
+    console.log(`🚴 Asignando repartidor ${userId} al pedido ${orderId}`);
 
     // ✅ 1. Verificar que el usuario es repartidor
     const { data: repartidor, error: repError } = await supabase
@@ -624,7 +647,7 @@ export const assignRepartidor = async (req, res) => {
     const { data: order, error: orderError } = await supabase
       .from('tb_pedidos')
       .select('estado, repartidor_id')
-      .eq('pedido_id', pedidoId)
+      .eq('pedido_id', orderId)
       .single();
 
     if (orderError || !order) {
@@ -655,7 +678,7 @@ export const assignRepartidor = async (req, res) => {
         repartidor_id: repartidor.repartidor_id,
         estado: 'camino'
       })
-      .eq('pedido_id', pedidoId);
+      .eq('pedido_id', orderId);
 
     if (updateError) {
       console.error('❌ Error asignando repartidor:', updateError);
@@ -666,15 +689,15 @@ export const assignRepartidor = async (req, res) => {
     }
 
     // ✅ 4. Crear registro de rastreo
-    await createTrackingRecord(pedidoId, 'listo', 'camino', 'repartidor');
+    await createTrackingRecord(orderId, 'listo', 'camino', 'repartidor');
 
-    console.log(`✅ Repartidor ${repartidor.repartidor_id} asignado al pedido ${pedidoId}`);
+    console.log(`✅ Repartidor ${repartidor.repartidor_id} asignado al pedido ${orderId}`);
 
     res.json({
       success: true,
       message: 'Pedido asignado exitosamente',
       order: {
-        pedido_id: pedidoId,
+        pedido_id: orderId,
         estado: 'camino',
         repartidor_id: repartidor.repartidor_id
       }

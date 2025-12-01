@@ -517,6 +517,19 @@ class RapiRushAPI {
     }
   }
 
+  // ✅ OBTENER DETALLES DE UN PEDIDO
+  async getOrderById(orderId) {
+    try {
+      console.log('📋 Obteniendo detalles del pedido:', orderId);
+      
+      const response = await this.request(`/orders/${orderId}`);
+      return response.order || response;
+    } catch (error) {
+      console.error('❌ Error obteniendo pedido:', error);
+      return null;
+    }
+  }
+
   // ✅ OBTENER PEDIDOS DEL REPARTIDOR
   async getRepartidorOrders() {
     try {

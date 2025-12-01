@@ -13,7 +13,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold text-warning" href="../index.html">
-              <h3>🚚 RapiRush</h3>
+              <h3>🛵 RapiRush</h3>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -358,39 +358,29 @@
 
         async function loadOrders() {
         try {
-            const token = localStorage.getItem('supabaseAuthToken');
-            if (!token) throw new Error('No autenticado');
+            console.log('📋 Iniciando loadOrders...');
+            const api = window.rapiRushAPI;
+            if (!api) throw new Error('API no disponible');
 
-            const response = await fetch('http://localhost:3000/api/orders/restaurant/' + restauranteId, {
-            headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            console.log('🔎 Response Status:', response.status);
-
-            if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || `Error ${response.status} al cargar pedidos`);
-            }
-
-            const data = await response.json();
-            restauranteOrders = data.orders || [];
+            const orders = await api.getRestaurantOrders();
+            restauranteOrders = orders || [];
             console.log('📦 Pedidos del restaurante:', restauranteOrders);
             console.log('📊 Total de pedidos:', restauranteOrders.length);
 
             renderOrders();
         } catch (error) {
             console.error('❌ Error:', error);
-            showAlert(error.message, 'danger'); // 👈 ya no concatenamos dos veces
+            showAlert(error.message, 'danger');
         }
         }
 
         // Renderizar pedidos por estado
         function renderOrders() {
-            // ✅ NUEVO: Filtrar por el estado correcto que BDD retorna (status viene del backend)
-            const recibidos = restauranteOrders.filter(o => o.status === 'recibido');
-            const aceptados = restauranteOrders.filter(o => o.status === 'aceptado');
-            const preparando = restauranteOrders.filter(o => o.status === 'preparando');
-            const listos = restauranteOrders.filter(o => o.status === 'listo');
+            // ✅ FILTRAR por estado usando el campo correcto de la BD
+            const recibidos = restauranteOrders.filter(o => o.estado === 'recibido');
+            const aceptados = restauranteOrders.filter(o => o.estado === 'aceptado');
+            const preparando = restauranteOrders.filter(o => o.estado === 'preparando');
+            const listos = restauranteOrders.filter(o => o.estado === 'listo');
 
             // Actualizar contadores
             document.getElementById('recibidosCount').textContent = recibidos.length;
@@ -422,14 +412,14 @@
                     <div class="card border-left border-primary">
                         <div class="card-body">
                             <h6 class="card-title">
-                                <strong>Pedido #${order.id.toString().slice(-6)}</strong>
-                                <span class="badge ${getStatusBadgeClass(order.status)}">${order.status}</span>
+                                <strong>Pedido #${order.pedido_id.toString().slice(-6)}</strong>
+                                <span class="badge ${getStatusBadgeClass(order.estado)}">${order.estado}</span>
                             </h6>
-                            <p class="mb-2"><strong>Cliente:</strong> ${order.cliente_nombres || 'N/A'}</p>
-                            <p class="mb-2"><strong>Dirección:</strong> ${order.delivery_address || 'N/A'}</p>
+                            <p class="mb-2"><strong>Cliente:</strong> ${order.nombre_cliente || 'N/A'}</p>
+                            <p class="mb-2"><strong>Dirección:</strong> ${order.direccion_entrega || 'N/A'}</p>
                             <p class="mb-2"><strong>Total:</strong> S/. ${(order.total || 0).toFixed(2)}</p>
-                            <p class="mb-3"><strong>Items:</strong> ${order.item_count || 0} productos</p>
-                            <button class="btn btn-sm btn-info" onclick="showOrderDetail(${order.id})">
+                            <p class="mb-3"><strong>Items:</strong> ${(order.tb_pedido_detalles?.length || 0)} productos</p>
+                            <button class="btn btn-sm btn-info" onclick="showOrderDetail('${order.pedido_id}')">
                                 Ver Detalles
                             </button>
                         </div>
@@ -438,31 +428,24 @@
             `).join('');
         }
 
-        function getStatusBadgeClass(status) {
+        function getStatusBadgeClass(estado) {
             const classes = {
                 'recibido': 'bg-info text-white',
                 'aceptado': 'bg-success',
                 'preparando': 'bg-warning text-dark',
                 'listo': 'bg-danger'
             };
-            return classes[status] || 'bg-secondary';
+            return classes[estado] || 'bg-secondary';
         }
 
         // ✅ CARGAR PRODUCTOS DEL RESTAURANTE
         async function loadProducts() {
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) return;
+                console.log('📦 Cargando productos...', { restauranteId });
+                const api = window.rapiRushAPI;
+                if (!api) return;
 
-                const response = await fetch(`http://localhost:3000/api/products?restaurant_id=${restauranteId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!response.ok) throw new Error('Error al cargar productos');
-                
-                const data = await response.json();
-                const products = data.data || data.products || [];
+                const products = await api.getRestaurantProducts(restauranteId);
                 console.log('📦 Productos del restaurante:', products);
                 
                 renderProducts(products);
@@ -503,18 +486,13 @@
         // Mostrar detalles del pedido
         async function showOrderDetail(orderId) {
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
+                console.log('📋 Obteniendo detalles del pedido:', orderId);
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                const response = await fetch('/api/orders/' + orderId, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!response.ok) throw new Error('Error al cargar detalles');
-                
-                const data = await response.json();
-                const order = data.order || data;
+                const order = await api.getOrderById(orderId);
+                if (!order) throw new Error('Pedido no encontrado');
+
                 const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
                 
                 // Renderizar detalles
@@ -522,34 +500,34 @@
                 let html = `
                     <div class="mb-3">
                         <h6 class="text-primary">📋 Información del Pedido</h6>
-                        <p class="mb-1"><strong>Cliente:</strong> ${order.cliente_nombres || 'N/A'}</p>
-                        <p class="mb-1"><strong>Teléfono:</strong> ${order.cliente_telefono || 'N/A'}</p>
-                        <p class="mb-3"><strong>Estado:</strong> <span class="badge ${getStatusBadgeClass(order.status)}">${order.status}</span></p>
+                        <p class="mb-1"><strong>Cliente:</strong> ${order.nombre_cliente || 'N/A'}</p>
+                        <p class="mb-1"><strong>Teléfono:</strong> ${order.telefono_cliente || 'N/A'}</p>
+                        <p class="mb-3"><strong>Estado:</strong> <span class="badge ${getStatusBadgeClass(order.estado)}">${order.estado}</span></p>
                     </div>
                     
                     <div class="mb-3">
                         <h6 class="text-primary">🏠 Entrega</h6>
-                        <p class="mb-1"><strong>Dirección:</strong> ${order.delivery_address || 'N/A'}</p>
-                        <p class="mb-1"><strong>Distrito:</strong> ${order.district || 'N/A'}</p>
-                        ${order.referencia_entrega ? `<p class="mb-1"><strong>Referencia:</strong> ${order.referencia_entrega}</p>` : ''}
-                        ${order.nota_repartidor ? `<p class="mb-3"><strong>Nota:</strong> <em>"${order.nota_repartidor}"</em></p>` : ''}
+                        <p class="mb-1"><strong>Dirección:</strong> ${order.direccion_entrega || 'N/A'}</p>
+                        <p class="mb-1"><strong>Distrito:</strong> ${order.distrito || 'N/A'}</p>
+                        ${order.referencia ? `<p class="mb-1"><strong>Referencia:</strong> ${order.referencia}</p>` : ''}
+                        ${order.notas_adicionales ? `<p class="mb-3"><strong>Nota:</strong> <em>"${order.notas_adicionales}"</em></p>` : ''}
                     </div>
                     
                     <div class="mb-3">
                         <h6 class="text-primary">📦 Items</h6>
                         <div class="list-group">`;
                 
-                // Agregar items
-                if (order.items && Array.isArray(order.items)) {
-                    order.items.forEach(item => {
+                // Agregar items de la relación tb_pedido_detalles
+                if (order.tb_pedido_detalles && Array.isArray(order.tb_pedido_detalles)) {
+                    order.tb_pedido_detalles.forEach(item => {
                         html += `
                             <div class="list-group-item">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h6 class="mb-0">${item.name}</h6>
-                                        <small class="text-muted">${item.quantity}x ${item.description || ''}</small>
+                                        <h6 class="mb-0">${item.nombre_producto || 'Producto'}</h6>
+                                        <small class="text-muted">${item.cantidad}x</small>
                                     </div>
-                                    <span class="fw-bold">S/. ${(item.price * item.quantity).toFixed(2)}</span>
+                                    <span class="fw-bold">S/. ${(item.precio_unitario * item.cantidad).toFixed(2)}</span>
                                 </div>
                             </div>`;
                     });
@@ -563,23 +541,23 @@
                 const footer = document.getElementById('orderDetailFooter');
                 footer.innerHTML = '';
 
-                // ✅ FIXED: Cambié 'pendiente' por 'recibido' (lo que envía el backend)
-                if (order.status === 'recibido') {
+                // ✅ Estados según la BD: recibido → aceptado → preparando → listo
+                if (order.estado === 'recibido') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-success" onclick="updateOrderStatus(${orderId}, 'aceptado')">
+                        <button type="button" class="btn btn-success" onclick="updateOrderStatus('${orderId}', 'aceptado')">
                             ✅ Aceptar Pedido
                         </button>
-                        <button type="button" class="btn btn-danger" onclick="updateOrderStatus(${orderId}, 'cancelado')">
+                        <button type="button" class="btn btn-danger" onclick="updateOrderStatus('${orderId}', 'cancelado')">
                             ❌ Rechazar
                         </button>`;
-                } else if (order.status === 'aceptado') {
+                } else if (order.estado === 'aceptado') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-warning" onclick="updateOrderStatus(${orderId}, 'preparando')">
+                        <button type="button" class="btn btn-warning" onclick="updateOrderStatus('${orderId}', 'preparando')">
                             👨‍🍳 Marcar Preparando
                         </button>`;
-                } else if (order.status === 'preparando') {
+                } else if (order.estado === 'preparando') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-info" onclick="updateOrderStatus(${orderId}, 'listo')">
+                        <button type="button" class="btn btn-info" onclick="updateOrderStatus('${orderId}', 'listo')">
                             ✨ Marcar Listo para Entrega
                         </button>`;
                 }
@@ -598,24 +576,12 @@
             if (!confirm(`¿Cambiar estado a "${newStatus}"?`)) return;
 
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
+                console.log('📝 Actualizando estado:', { orderId, newStatus });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                console.log('📝 Actualizando estado:', { orderId, newStatus, token: token.substring(0, 20) + '...' });
-
-                const response = await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ estado: newStatus })
-                });
-
-                const data = await response.json();
-                console.log('📥 Respuesta:', data);
-
-                if (!response.ok) throw new Error(data.error || 'Error al actualizar');
+                const result = await api.updateOrderStatus(orderId, newStatus);
+                console.log('📥 Respuesta:', result);
 
                 showAlert(`✅ Pedido actualizado a: ${newStatus}`, 'success');
                 bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
@@ -657,17 +623,12 @@
         // ✅ FUNCIONES PARA PERFIL
         async function cargarPerfilRestaurante() {
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
+                console.log('📋 Cargando perfil del restaurante...', { restauranteId });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                const response = await fetch(`http://localhost:3000/api/restaurants/${restauranteId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!response.ok) throw new Error('Error al cargar perfil');
-
-                const data = await response.json();
-                const restaurante = data.restaurant || data.data;
+                const restaurante = await api.getRestaurantById(restauranteId);
+                if (!restaurante) throw new Error('Restaurante no encontrado');
 
                 // Llenar formulario
                 document.getElementById('perfilNombre').value = restaurante.nombre || '';
@@ -702,11 +663,14 @@
             };
 
             try {
+                console.log('📝 Actualizando perfil:', { restauranteId, ...perfilData });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
                 const token = localStorage.getItem('supabaseAuthToken');
                 if (!token) throw new Error('No autenticado');
 
-                console.log('📝 Actualizando perfil:', perfilData);
-
+                // Hacer request directo ya que no existe método en API
                 const response = await fetch(`http://localhost:3000/api/restaurants/${restauranteId}`, {
                     method: 'PUT',
                     headers: {
@@ -758,24 +722,21 @@
 
         async function editProduct(productId) {
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
+                console.log('📦 Cargando producto para editar:', productId);
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!response.ok) throw new Error('Error al cargar producto');
-
-                const data = await response.json();
-                const product = data.product || data.data;
+                // Buscar producto en la lista cargada
+                const product = restauranteOrders.flatMap(o => o.items || []).find(item => item.id === productId);
+                
+                if (!product) throw new Error('Producto no encontrado');
 
                 // Llenar modal con datos del producto
                 currentProductId = productId;
-                document.getElementById('productName').value = product.nombre;
+                document.getElementById('productName').value = product.nombre || '';
                 document.getElementById('productDesc').value = product.descripcion || '';
-                document.getElementById('productCategory').value = product.categoria;
-                document.getElementById('productPrice').value = product.base_price;
+                document.getElementById('productCategory').value = product.categoria || '';
+                document.getElementById('productPrice').value = product.base_price || product.precio || '';
                 document.getElementById('productImage').value = product.image_url || '';
 
                 // Cambiar título del modal
@@ -797,23 +758,15 @@
             if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
 
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
-
                 console.log('🗑️ Eliminando producto:', productId);
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                const data = await response.json();
-                console.log('📥 Respuesta:', data);
-
-                if (!response.ok) throw new Error(data.error || 'Error al eliminar producto');
+                const result = await api.deleteProduct(productId);
+                console.log('📥 Respuesta:', result);
 
                 showAlert('✅ Producto eliminado exitosamente', 'success');
-                loadProducts(); // Recargar lista
+                await loadProducts(); // Recargar lista
 
             } catch (error) {
                 console.error('❌ Error:', error);
@@ -843,38 +796,23 @@
             }
 
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
+                console.log('📦 Guardando producto:', { currentProductId, ...producto });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                let response, url, method;
+                let result;
 
                 // ✅ Si estamos editando
                 if (currentProductId) {
-                    url = `http://localhost:3000/api/products/${currentProductId}`;
-                    method = 'PUT';
                     console.log('📝 Actualizando producto:', producto);
+                    result = await api.updateProduct(currentProductId, producto);
                 } else {
                     // ✅ Si es nuevo
-                    url = 'http://localhost:3000/api/products/create';
-                    method = 'POST';
                     console.log('📤 Creando nuevo producto:', producto);
+                    result = await api.createProduct(producto);
                 }
 
-                response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(producto)
-                });
-
-                const data = await response.json();
-                console.log('📥 Respuesta:', data);
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Error al guardar producto');
-                }
+                console.log('📥 Respuesta:', result);
 
                 showAlert(currentProductId ? '✅ Producto actualizado' : '✅ Producto creado', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
@@ -886,7 +824,7 @@
                 const submitBtn = document.querySelector('#addProductForm button[type="submit"]');
                 if (submitBtn) submitBtn.textContent = '➕ Agregar Producto';
 
-                loadProducts(); // Recargar lista
+                await loadProducts(); // Recargar lista
 
             } catch (error) {
                 console.error('❌ Error:', error);

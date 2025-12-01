@@ -3,12 +3,12 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 INSERT INTO tb_usuarios (usuario_id, email, rol, estado, fecha_creacion) VALUES
-('10000000-0000-0000-0000-000000000001', 'pizzeria@rapirush.com', 'restaurante', 'activo', NOW()),
-('10000000-0000-0000-0000-000000000002', 'burgerhouse@rapirush.com', 'restaurante', 'activo', NOW()),
-('10000000-0000-0000-0000-000000000003', 'sushimaster@rapirush.com', 'restaurante', 'activo', NOW()),
-('10000000-0000-0000-0000-000000000004', 'dulcetentacion@rapirush.com', 'restaurante', 'activo', NOW()),
-('10000000-0000-0000-0000-000000000005', 'polloperuano@rapirush.com', 'restaurante', 'activo', NOW()),
-('10000000-0000-0000-0000-000000000006', 'sushiexpress@rapirush.com', 'restaurante', 'activo', NOW()),
+('f1a0041c-8ee3-4b89-9eb7-65a964321ac1', 'pizzeria@rapirush.com', 'restaurante', 'activo', NOW()),
+('ccf55b13-72ef-4a2b-8846-64fcbf2f87ca', 'burgerhouse@rapirush.com', 'restaurante', 'activo', NOW()),
+('df6f1628-7ae1-4118-bdf4-7e17c5c85eca', 'sushimaster@rapirush.com', 'restaurante', 'activo', NOW()),
+('877a0c02-8368-474f-bc8a-34dbb221024a', 'dulcetentacion@rapirush.com', 'restaurante', 'activo', NOW()),
+('0d9aefe0-1d47-44ce-8d10-9bad5722db2c', 'polloperuano@rapirush.com', 'restaurante', 'activo', NOW()),
+('2547cde2-2185-4d49-8b73-0bd84f5b134b', 'sushiexpress@rapirush.com', 'restaurante', 'activo', NOW()),
 ('10000000-0000-0000-0000-000000000007', 'burgerland@rapirush.com', 'restaurante', 'activo', NOW()),
 ('10000000-0000-0000-0000-000000000008', 'pizzabella@rapirush.com', 'restaurante', 'activo', NOW()),
 ('10000000-0000-0000-0000-000000000009', 'chifaoriental@rapirush.com', 'restaurante', 'activo', NOW()),
@@ -29,7 +29,7 @@ INSERT INTO tb_restaurantes
 VALUES
 
 -- 1. La Pizzería Italiana
-('10000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 
+('f1a0041c-8ee3-4b89-9eb7-65a964321ac1', 'f1a0041c-8ee3-4b89-9eb7-65a964321ac1', 
   (SELECT categoria_id FROM tb_categorias WHERE nombre = 'Italiana' LIMIT 1),
   'La Pizzería Italiana', 'pizzeria@rapirush.com', '+51 999 888 777', 
   'Las mejores pizzas artesanales con ingredientes frescos y de calidad',
@@ -39,7 +39,7 @@ VALUES
   true, true, 4.8, 520, NOW()),
 
 -- 2. Burger House
-('10000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002',
+('ccf55b13-72ef-4a2b-8846-64fcbf2f87ca', 'ccf55b13-72ef-4a2b-8846-64fcbf2f87ca',
   (SELECT categoria_id FROM tb_categorias WHERE nombre = 'Comida Rápida' LIMIT 1),
   'Burger House', 'burgerhouse@rapirush.com', '+51 999 888 666',
   'Las mejores hamburguesas gourmet de la ciudad',
@@ -49,7 +49,7 @@ VALUES
   true, true, 4.7, 480, NOW()),
 
 -- 3. Sushi Master
-('10000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000003',
+('df6f1628-7ae1-4118-bdf4-7e17c5c85eca', 'df6f1628-7ae1-4118-bdf4-7e17c5c85eca',
   (SELECT categoria_id FROM tb_categorias WHERE nombre = 'Asiática' LIMIT 1),
   'Sushi Master', 'sushimaster@rapirush.com', '+51 999 888 555',
   'Auténtico sushi japonés con ingredientes premium',
@@ -59,7 +59,7 @@ VALUES
   true, true, 4.8, 620, NOW()),
 
 -- 4. Dulce Tentación
-('10000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000004',
+('877a0c02-8368-474f-bc8a-34dbb221024a', '877a0c02-8368-474f-bc8a-34dbb221024a',
   (SELECT categoria_id FROM tb_categorias WHERE nombre = 'Postres' LIMIT 1),
   'Dulce Tentación', 'dulcetentacion@rapirush.com', '+51 999 888 444',
   'Los mejores postres y café de especialidad',
@@ -69,7 +69,7 @@ VALUES
   true, true, 4.9, 750, NOW()),
 
 -- 5. Pollo Peruano
-('10000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000005',
+('0d9aefe0-1d47-44ce-8d10-9bad5722db2c', '0d9aefe0-1d47-44ce-8d10-9bad5722db2c',
   (SELECT categoria_id FROM tb_categorias WHERE nombre = 'Comida Rápida' LIMIT 1),
   'Pollo Peruano', 'polloperuano@rapirush.com', '+51 999 888 333',
   'El auténtico pollo a la brasa peruano',
@@ -79,7 +79,7 @@ VALUES
   true, true, 4.7, 820, NOW()),
 
 -- 6. Sushi Express
-('10000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000006',
+('2547cde2-2185-4d49-8b73-0bd84f5b134b', '2547cde2-2185-4d49-8b73-0bd84f5b134b',
   (SELECT categoria_id FROM tb_categorias WHERE nombre = 'Asiática' LIMIT 1),
   'Sushi Express', 'sushiexpress@rapirush.com', '+51 999 888 222',
   'Sushi fresco y rápido a tu puerta',

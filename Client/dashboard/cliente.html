@@ -179,9 +179,9 @@
                                 </h5>
                             </div>
                         <div class="btn-group mb-2 col-12" role="group">
-                            <button class="btn btn-outline-secondary active  " onclick="filtrarHistorial('all')">Todos</button>
-                            <button class="btn btn-outline-secondary" onclick="filtrarHistorial('delivered')">Entregados</button>
-                            <button class="btn btn-outline-secondary" onclick="filtrarHistorial('cancelled')">Cancelados</button>
+                            <button class="btn btn-outline-secondary active filtro-historial-btn" onclick="filtrarHistorial('all'); return false;">Todos</button>
+                            <button class="btn btn-outline-secondary filtro-historial-btn" onclick="filtrarHistorial('delivered'); return false;">Entregados</button>
+                            <button class="btn btn-outline-secondary filtro-historial-btn" onclick="filtrarHistorial('cancelled'); return false;">Cancelados</button>
                         </div>
                     </div>
                     <div class="card-body" id="orderHistory">
@@ -277,14 +277,7 @@
 <script src="../assets/js/api/rapiRushAPI.js"></script>
 <script src="../assets/js/authManager.js"></script>
 <script src="../assets/js/carrito.js"></script>
-<!-- ⏳ PEQUEÑO DELAY para asegurar que authManager esté listo -->
-<script>
-  setTimeout(() => {
-    const script = document.createElement('script');
-    script.src = '../assets/js/cliente.js';
-    document.body.appendChild(script);
-  }, 100);
-</script>
+<script src="../assets/js/cliente.js"></script>
 
 </body>
 
