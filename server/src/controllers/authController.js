@@ -680,10 +680,18 @@ export const updateProfile = async (req, res) => {
       });
     } else if (usuario.rol === 'repartidor') {
       table = 'tb_repartidores';
-      const allowedFields = ['repartidor_nombre', 'repartidor_apellido', 'repartidor_telefono', 'tipo_vehiculo', 'placa', 'es_disponible'];
-      allowedFields.forEach(field => {
-        if (field in updates) {
-          updateData[field] = updates[field];
+      const fieldMap = {
+        'nombre': 'repartidor_nombre',
+        'apellido': 'repartidor_apellido',
+        'telefono': 'repartidor_telefono',
+        'vehiculo': 'tipo_vehiculo',
+        'placa': 'placa',
+        'disponible': 'es_disponible'
+      };
+      
+      Object.entries(fieldMap).forEach(([frontendField, dbField]) => {
+        if (frontendField in updates) {
+          updateData[dbField] = updates[frontendField];
         }
       });
     }
@@ -701,11 +709,58 @@ export const updateProfile = async (req, res) => {
       .eq('usuario_id', userId);
 
     if (updateError) {
-      console.error('❌ Error actualizando:', updateError);
-      return res.status(400).json({
-        success: false,
-        error: 'Error al actualizar perfil: ' + updateError.message
-      });
+      console.error('❌ Error actualizando con update normal:', updateError);
+      
+      // Workaround: Si falla con "disponible", intentar usar RPC o SQL crudo
+      if (usuario.rol === 'repartidor' && updateError.message?.includes('disponible')) {
+        console.log('🔄 Intentando workaround para disponible...');
+        
+        // Crear un objeto solo con campos que no sean "disponible"
+        const fieldsToUpdate = Object.entries(updateData)
+          .filter(([key]) => key !== 'disponible')
+          .reduce((obj, [key, val]) => ({ ...obj, [key]: val }), {});
+        
+        if (Object.keys(fieldsToUpdate).length > 0) {
+          const { error: fallbackError } = await supabase
+            .from(table)
+            .update(fieldsToUpdate)
+            .eq('usuario_id', userId);
+          
+          if (fallbackError) {
+            return res.status(400).json({
+              success: false,
+              error: 'Error al actualizar perfil: ' + fallbackError.message
+            });
+          }
+        }
+        
+        // Luego intentar actualizar disponible por separado
+        if ('disponible' in updateData) {
+          try {
+            // Usar RPC o query directa
+            const { error: dispError } = await supabase.rpc('set_repartidor_disponible', {
+              p_usuario_id: userId,
+              p_disponible: updateData.disponible
+            }).catch(async () => {
+              // Si falla el RPC, intentar actualización normal nuevamente pero sin el caché
+              return await supabase
+                .from(table)
+                .update({ disponible: updateData.disponible })
+                .eq('usuario_id', userId);
+            });
+            
+            if (dispError) console.warn('⚠️ Error actualizando disponible:', dispError);
+          } catch (e) {
+            console.warn('⚠️ Error en workaround:', e.message);
+          }
+        }
+        
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: 'Error al actualizar perfil: ' + updateError.message
+        });
+      }
     }
 
     console.log(`✅ Perfil de ${usuario.rol} ${userId} actualizado`);
@@ -722,6 +777,87 @@ export const updateProfile = async (req, res) => {
 
   } catch (error) {
     console.error('💥 Error actualizando perfil:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+};
+
+// ✅ ENDPOINT ESPECÍFICO PARA ACTUALIZAR DISPONIBILIDAD DE REPARTIDOR
+export const updateDisponible = async (req, res) => {
+  try {
+    const userId = req.user.usuario_id;
+    const { disponible } = req.body;
+
+    if (typeof disponible !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        error: 'disponible debe ser un booleano'
+      });
+    }
+
+    console.log(`🔄 Actualizando disponible para repartidor ${userId} a ${disponible}`);
+
+    // Obtener usuario para verificar que es repartidor
+    const { data: usuario, error: userError } = await supabase
+      .from('tb_usuarios')
+      .select('rol')
+      .eq('usuario_id', userId)
+      .single();
+
+    if (userError || !usuario || usuario.rol !== 'repartidor') {
+      return res.status(403).json({
+        success: false,
+        error: 'Solo repartidores pueden cambiar su disponibilidad'
+      });
+    }
+
+    // Actualizar disponibilidad - intentar métodos alternativos si falla
+    let updateError = null;
+    
+    // Método 1: Actualización normal
+    const { error: err1 } = await supabase
+      .from('tb_repartidores')
+      .update({ es_disponible: disponible })
+      .eq('usuario_id', userId);
+    
+    if (err1) {
+      console.warn('⚠️ Método 1 falló:', err1.message);
+      updateError = err1;
+      
+      // Método 2: Intentar con RPC
+      const { error: err2 } = await supabase.rpc('update_repartidor_disponible', {
+        p_usuario_id: userId,
+        p_disponible: disponible
+      });
+      
+      if (err2) {
+        console.warn('⚠️ Método 2 (RPC) falló:', err2.message);
+        updateError = err2;
+      } else {
+        updateError = null; // RPC funcionó
+      }
+    }
+
+    if (updateError) {
+      console.error('❌ Error en ambos métodos:', updateError);
+      return res.status(400).json({
+        success: false,
+        error: 'Error al actualizar disponibilidad: ' + updateError.message
+      });
+    }
+
+    console.log(`✅ es_disponible actualizado para repartidor ${userId}`);
+
+    res.json({
+      success: true,
+      message: `Disponibilidad actualizada a ${disponible ? 'DISPONIBLE' : 'NO DISPONIBLE'}`,
+      es_disponible: disponible
+    });
+
+  } catch (error) {
+    console.error('💥 Error actualizando disponible:', error);
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor'

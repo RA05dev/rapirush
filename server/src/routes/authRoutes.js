@@ -16,7 +16,8 @@ import {
   login,
   logout,
   getProfile,
-  updateProfile
+  updateProfile,
+  updateDisponible
 } from '../controllers/authController.js';
 import { adminController } from '../controllers/adminController.js';
 
@@ -40,6 +41,7 @@ router.get('/health', (req, res) => {
 router.post('/logout', authMiddleware, logout);
 router.get('/profile', authMiddleware, getProfile);
 router.put('/profile', authMiddleware, updateProfile);
+router.put('/disponible', authMiddleware, updateDisponible);
 
 router.get('/verify', authMiddleware, (req, res) => {
   res.json({
