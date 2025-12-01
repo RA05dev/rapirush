@@ -356,21 +356,23 @@
             }, 500); // 500ms de delay para sincronización completa
         });
 
-        // Cargar pedidos del restaurante
-        try {
-            console.log('📋 Iniciando loadOrders...');
-            const api = window.rapiRushAPI;
-            if (!api) throw new Error('API no disponible');
+        // ✅ Cargar pedidos del restaurante (función async correctamente definida)
+        async function loadOrders() {
+            try {
+                console.log('📋 Iniciando loadOrders...');
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-            const orders = await api.getRestaurantOrders();
-            restauranteOrders = orders || [];
-            console.log('📦 Pedidos del restaurante:', restauranteOrders);
-            console.log('📊 Total de pedidos:', restauranteOrders.length);
+                const orders = await api.getRestaurantOrders();
+                restauranteOrders = orders || [];
+                console.log('📦 Pedidos del restaurante:', restauranteOrders);
+                console.log('📊 Total de pedidos:', restauranteOrders.length);
 
-            renderOrders();
-        } catch (error) {
-            console.error('❌ Error:', error);
-            showAlert(error.message, 'danger');
+                renderOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert(error.message, 'danger');
+            }
         }
 
         // Renderizar pedidos por estado

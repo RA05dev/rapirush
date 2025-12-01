@@ -658,7 +658,11 @@
 
         // Cargar pedidos al iniciar
         loadOrders();
-        cargarPerfilRepartidor(); // ← Cargar perfil también
+        
+        // ✅ Cargar perfil con un pequeño delay para asegurar que el DOM esté listo
+        setTimeout(() => {
+            cargarPerfilRepartidor();
+        }, 500);
 
         // ✅ ESTADO GLOBAL PARA DISPONIBLE
         window.currentDisponible = false;
@@ -737,25 +741,36 @@
         // ✅ FUNCIONES PARA PERFIL REPARTIDOR
         async function cargarPerfilRepartidor() {
             try {
+                console.log('🔄 Iniciando cargarPerfilRepartidor()...');
+                
                 const token = localStorage.getItem('supabaseAuthToken');
+                console.log('🔑 Token disponible:', !!token);
                 
                 if (!token) throw new Error('No autenticado');
 
                 // Obtener el perfil del repartidor desde el backend
+                console.log('📡 Llamando a GET /api/auth/profile...');
                 const response = await fetch(`http://localhost:3000/api/auth/profile`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
+                console.log('📊 Respuesta del servidor:', response.status, response.statusText);
+
                 if (!response.ok) {
-                    console.warn('⚠️ Endpoint de perfil no disponible, usando datos del storage');
+                    console.warn('⚠️ Endpoint de perfil no disponible (status:', response.status, ')');
                     const currentUser = window.authManager?.getCurrentUser();
-                    document.getElementById('perfilNombre').value = currentUser?.nombre || '';
-                    document.getElementById('perfilEmail').value = currentUser?.email || '';
+                    const perfilNombre = document.getElementById('perfilNombre');
+                    const perfilEmail = document.getElementById('perfilEmail');
+                    if (perfilNombre) perfilNombre.value = currentUser?.nombre || '';
+                    if (perfilEmail) perfilEmail.value = currentUser?.email || '';
                     return;
                 }
 
                 const data = await response.json();
+                console.log('📥 Datos del perfil recibidos:', data);
+                
                 const usuario = data.user || data.data;
+                console.log('👤 Usuario mapeado:', usuario);
 
                 // Mapear campos de tb_repartidores (que tienen prefijo repartidor_) a los campos del formulario
                 const campos = {
@@ -766,11 +781,16 @@
                     'perfilPlaca': usuario.placa || ''
                 };
 
+                console.log('📝 Campos a asignar:', campos);
+
                 // Asignar valores con verificación de que el elemento existe
                 Object.entries(campos).forEach(([id, valor]) => {
                     const elemento = document.getElementById(id);
                     if (elemento) {
                         elemento.value = valor;
+                        console.log(`✅ Asignado ${id} = ${valor}`);
+                    } else {
+                        console.warn(`❌ Elemento no encontrado: ${id}`);
                     }
                 });
 
@@ -778,6 +798,9 @@
                 const checkboxDisponible = document.getElementById('perfilDisponible');
                 if (checkboxDisponible) {
                     checkboxDisponible.checked = usuario.es_disponible === true;
+                    console.log(`✅ Checkbox perfilDisponible = ${usuario.es_disponible}`);
+                } else {
+                    console.warn('❌ Elemento perfilDisponible no encontrado');
                 }
 
                 // Guardar estado actual en variable global para toggle
