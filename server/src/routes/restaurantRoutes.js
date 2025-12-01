@@ -1,15 +1,45 @@
 import express from 'express';
 import { restaurantController } from '../controllers/restaurantController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { supabase } from '../config/supabaseClient.js';
 
 const router = express.Router();
 
-// ✅ RUTAS PÚBLICAS (no requieren autenticación)
-router.get('/restaurants', restaurantController.getAllRestaurants);
-router.get('/restaurants/search', restaurantController.searchRestaurants);
-router.get('/restaurants/:id', restaurantController.getRestaurantById);
+// ✅ RUTA DE DEBUG
+router.get('/debug/restaurants-count', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('tb_restaurantes')
+      .select('restaurante_id, restaurante_nombre', { count: 'exact' });
+    
+    if (error) {
+      return res.json({
+        success: false,
+        error: error.message,
+        code: error.code
+      });
+    }
 
-// ✅ RUTAS PROTEGIDAS (requieren autenticación)
-router.put('/restaurants/:id', authMiddleware, restaurantController.updateRestaurant);
+    res.json({
+      success: true,
+      count: data?.length || 0,
+      firstRestaurants: data?.slice(0, 3)?.map(r => ({
+        id: r.restaurante_id,
+        nombre: r.restaurante_nombre
+      }))
+    });
+  } catch (err) {
+    res.json({ error: err.message });
+  }
+});
+
+// ✅ RUTAS PÚBLICAS
+router.get('/', restaurantController.getAllRestaurants);
+router.get('/search', restaurantController.searchRestaurants);
+
+// ✅ RUTAS PROTEGIDAS
+router.put('/estado', authMiddleware, restaurantController.updateEstado);
+router.put('/:id', authMiddleware, restaurantController.updateRestaurant);
+router.get('/:id', restaurantController.getRestaurantById);
 
 export default router;

@@ -87,9 +87,9 @@ document.addEventListener('DOMContentLoaded', function() {
             rol: user.rol
         });
         
-        // ✅ VERIFICAR SESSIONSTORA GE ANTES DE REDIRIGIR
-        console.log('📦 sessionStorage ANTES de redirect:', {
-            user_id: sessionStorage.getItem('user_id'),
+        // ✅ MEJORA: Añadir verificación extra de sessionStorage
+        console.log('📦 sessionStorage en redirectAfterLogin:', {
+            usuario_id: sessionStorage.getItem('usuario_id'), // ✅ Cambiar user_id → usuario_id
             user_role: sessionStorage.getItem('user_role'),
             user_email: sessionStorage.getItem('user_email'),
             user_name: sessionStorage.getItem('user_name')
@@ -170,27 +170,9 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.replace(targetPage);
     }
 
-    // Función para mostrar alertas
+    // Función para mostrar alertas - USAR ALERTA GLOBAL
     function showAlert(message, type) {
-        const existingAlert = document.querySelector('.alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        document.querySelector('#loginForm').prepend(alertDiv);
-
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
+        window.globalShowAlert(message, type, 5000);
     }
 
     // ✅ FUNCIÓN PARA MOSTRAR TOAST (notificación flotante)

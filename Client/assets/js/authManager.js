@@ -1,4 +1,6 @@
-// authManager.js - VERSIÓN DEFINITIVA SIN DUPLICACIONES
+// authManager.js - VERSIÓN CORREGIDA PARA NUEVO BACKEND
+console.log('📦 Cargando authManager.js...');
+
 class AuthManager {
     constructor() {
         this.currentUser = null;
@@ -9,21 +11,31 @@ class AuthManager {
     async init() {
         console.log('🔄 AuthManager inicializando...');
         
-        // ✅ CARGAR desde storage
+        // ✅ CARGAR desde storage PRIMERO
         this.loadFromStorage();
         
         console.log('🔍 Estado inicial:', {
             hasToken: !!this.token,
             hasUser: !!this.currentUser,
+            isLoggedIn: this.isLoggedIn(),
             tokenLength: this.token?.length
         });
         
-        // ✅ VERIFICAR SI HAY TOKEN VÁLIDO
+        // ✅ SI YA HAY USUARIO LOGUEADO EN STORAGE, NO VERIFICAR TOKEN
+        if (this.isLoggedIn()) {
+            console.log('✅ Usuario ya logueado en storage - usando datos guardados');
+            this.updateGlobalUI();
+            return;
+        }
+        
+        // ✅ SOLO VERIFICAR SI NO HAY DATOS GUARDADOS Y HAY TOKEN
         if (this.token && this.isValidToken(this.token)) {
             try {
+                console.log('🔐 Intentando verificar token con servidor...');
                 await this.verifyToken();
             } catch (error) {
-                console.warn('⚠️ Error en verifyToken:', error);
+                console.warn('⚠️ Verificación de token falló (esperado si está expirado):', error.message);
+                this.clearAuth();
             }
         } else if (this.token && !this.isValidToken(this.token)) {
             console.warn('⚠️ Token inválido en storage - limpiando');
@@ -45,6 +57,15 @@ class AuthManager {
         return tokenParts.length === 3;
     }
 
+    // ✅ ESPERAR A QUE authManager ESTÉ LISTO
+    async isReady() {
+        console.log('⏳ Esperando a que AuthManager esté listo...');
+        await this.initPromise;
+        console.log('✅ AuthManager listo');
+        return true;
+    }
+
+    // ✅ VERSIÓN CORREGIDA - No cierra sesión innecesariamente
     loadFromStorage() {
         try {
             const savedUser = localStorage.getItem('currentUser');
@@ -56,28 +77,41 @@ class AuthManager {
                 tokenLength: savedToken?.length
             });
             
-            if (savedUser) {
-                this.currentUser = JSON.parse(savedUser);
-                console.log('👤 Usuario cargado:', this.currentUser?.email);
-            }
-            
+            // ✅ CRÍTICO: PRIMERO configurar el token en rapiRushAPI
             if (savedToken && this.isValidToken(savedToken)) {
                 this.token = savedToken;
                 console.log('🔐 Token cargado - Longitud:', this.token.length);
                 
-                // ✅ CONFIGURAR TOKEN EN rapiRushAPI
+                // ✅ CONFIGURAR TOKEN INMEDIATAMENTE en rapiRushAPI
                 if (window.rapiRushAPI && typeof window.rapiRushAPI.setToken === 'function') {
                     window.rapiRushAPI.setToken(this.token);
                     console.log('✅ Token configurado en rapiRushAPI');
                 }
-            } else if (savedToken && !this.isValidToken(savedToken)) {
-                console.warn('❌ Token inválido en storage:', savedToken);
-                localStorage.removeItem('supabaseAuthToken');
+                
+                // ✅ LUEGO cargar usuario
+                if (savedUser) {
+                    try {
+                        this.currentUser = JSON.parse(savedUser);
+                        // ✅ FORZAR loggedIn a true cuando tenemos token válido
+                        this.loggedIn = true;
+                        this.currentUser.loggedIn = true;
+                        
+                        // ✅ GUARDAR INMEDIATAMENTE con loggedIn = true
+                        localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+                        console.log('👤 Usuario cargado y persistido:', this.currentUser?.email);
+                        console.log('✅ loggedIn guardado en localStorage');
+                    } catch (e) {
+                        console.warn('⚠️ Error parseando usuario:', e);
+                        this.currentUser = null;
+                        this.loggedIn = false;
+                    }
+                }
+            } else {
+                console.log('⚠️ Sin token válido, limpiando sesión');
+                this.clearAuth();
             }
-            
         } catch (error) {
             console.warn('❌ Error cargando desde storage:', error);
-            this.clearAuth();
         }
     }
 
@@ -117,25 +151,29 @@ class AuthManager {
     async syncUserData(apiData) {
         const userData = apiData.user || apiData;
         
+        // ✅ CORRECCIÓN: Usar los campos correctos del nuevo backend
         this.currentUser = {
-            id: userData.id,                                          // ✅ ID del usuario (auth)
-            restaurante_id: userData.restaurante_id || null,         // ✅ ID del restaurante si aplica
-            repartidor_id: userData.repartidor_id || null,           // ✅ ID del repartidor si aplica
-            nombre: userData.nombre || userData.nombres || userData.email.split('@')[0],  // ✅ Nombre correcto
-            name: userData.nombre || userData.nombres || userData.email.split('@')[0],    // ✅ Alias para compatibilidad
+            id: userData.id || userData.usuario_id,                   // ✅ Compatibilidad con ambos
+            usuario_id: userData.usuario_id || userData.id,           // ✅ Nuevo campo
+            restaurante_id: userData.restaurante_id || null,          // ✅ ID del restaurante si aplica
+            repartidor_id: userData.repartidor_id || null,            // ✅ ID del repartidor si aplica
+            cliente_id: userData.cliente_id || null,                  // ✅ ID del cliente si aplica
+            nombre: userData.nombre || userData.nombres || userData.cliente_nombre || userData.restaurante_nombre || userData.repartidor_nombre || userData.email.split('@')[0],
+            name: userData.nombre || userData.nombres || userData.cliente_nombre || userData.restaurante_nombre || userData.repartidor_nombre || userData.email.split('@')[0],
             email: userData.email,
-            role: userData.rol || 'cliente',                          // ✅ Inglés para compatibilidad
-            rol: userData.rol || 'cliente',                           // ✅ Español para dashboards
-            phone: userData.telefono || '',
-            address: userData.direccion || '',
+            role: userData.rol || userData.role || 'cliente',         // ✅ Compatibilidad
+            rol: userData.rol || userData.role || 'cliente',          // ✅ Campo principal
+            phone: userData.telefono || userData.cliente_telefono || userData.restaurante_telefono || userData.repartidor_telefono || '',
+            address: userData.direccion || userData.cliente_direccion || userData.restaurante_direccion || '',
             loggedIn: true,
             loginTime: new Date().toISOString()
         };
 
         console.log('💾 Sincronizando datos del usuario:', {
-            id: this.currentUser.id,
+            usuario_id: this.currentUser.usuario_id,
             restaurante_id: this.currentUser.restaurante_id,
             repartidor_id: this.currentUser.repartidor_id,
+            cliente_id: this.currentUser.cliente_id,
             name: this.currentUser.name,
             role: this.currentUser.role
         });
@@ -148,9 +186,9 @@ class AuthManager {
         try {
             if (this.currentUser) {
                 localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-                localStorage.setItem('user_id', this.currentUser.id);
+                localStorage.setItem('usuario_id', this.currentUser.usuario_id || this.currentUser.id);
                 localStorage.setItem('user_name', this.currentUser.nombre || this.currentUser.name);
-                localStorage.setItem('user_role', this.currentUser.role || this.currentUser.rol);
+                localStorage.setItem('user_role', this.currentUser.rol || this.currentUser.role);
                 
                 // ✅ Guardar IDs específicos si existen
                 if (this.currentUser.restaurante_id) {
@@ -158,6 +196,9 @@ class AuthManager {
                 }
                 if (this.currentUser.repartidor_id) {
                     localStorage.setItem('repartidor_id', this.currentUser.repartidor_id);
+                }
+                if (this.currentUser.cliente_id) {
+                    localStorage.setItem('cliente_id', this.currentUser.cliente_id);
                 }
                 
                 console.log('💾 Usuario guardado en storage');
@@ -172,67 +213,50 @@ class AuthManager {
         }
     }
 
-    // ✅ MÉTODO LOGIN ÚNICO Y DEFINITIVO
+    // ✅ MÉTODO LOGIN CORREGIDO
     async login(email, password, rememberMe = true) {
         try {
-            console.log('📤 Iniciando sesión...', email);
+            console.log('📤 AuthManager.login() llamado para:', email);
             
             // ✅ USAR EL MÉTODO DE INSTANCIA DE rapiRushAPI
             const result = await window.rapiRushAPI.login(email, password);
-            console.log('✅ Login API result:', result);
+            console.log('✅ Login API result recibido:', {success: result.success, hasUser: !!result.user, hasSession: !!result.session});
 
             if (!result.success || !result.user) {
+                console.error('❌ Respuesta de login inválida:', result);
                 throw new Error(result.error || 'Credenciales incorrectas');
             }
 
             // ✅ CONFIGURAR TOKEN
             if (result.session && result.session.access_token) {
                 this.token = result.session.access_token;
-                
-                // ✅ VERIFICAR SINCRONIZACIÓN CON rapiRushAPI
-                if (window.rapiRushAPI.token !== this.token) {
-                    console.warn('⚠️ Token no sincronizado, configurando manualmente...');
-                    window.rapiRushAPI.setToken(this.token);
-                }
-                
+                window.rapiRushAPI.setToken(this.token);
                 localStorage.setItem('supabaseAuthToken', this.token);
                 console.log('💾 Token guardado - Longitud:', this.token.length);
             } else {
                 throw new Error('No se recibió token de autenticación');
             }
 
-            // ✅ GUARDAR DATOS EN sessionStorage Y localStorage PARA LOS DASHBOARDS
-            sessionStorage.setItem('user_id', result.user.id);
+            // ✅ GUARDAR DATOS EN sessionStorage Y localStorage
+            sessionStorage.setItem('usuario_id', result.user.usuario_id || result.user.id);
             sessionStorage.setItem('user_email', result.user.email);
             sessionStorage.setItem('user_role', result.user.rol);
-            sessionStorage.setItem('user_name', result.user.nombre || result.user.nombres || result.user.email);
+            sessionStorage.setItem('user_name', result.user.nombre || result.user.nombres || result.user.cliente_nombre || result.user.restaurante_nombre || result.user.email);
             
             // ✅ TAMBIÉN GUARDAR EN localStorage PARA PERSISTENCIA
-            localStorage.setItem('user_id', result.user.id);
+            localStorage.setItem('usuario_id', result.user.usuario_id || result.user.id);
             localStorage.setItem('user_email', result.user.email);
             localStorage.setItem('user_role', result.user.rol);
-            localStorage.setItem('user_name', result.user.nombre || result.user.nombres || result.user.email);
+            localStorage.setItem('user_name', result.user.nombre || result.user.nombres || result.user.cliente_nombre || result.user.restaurante_nombre || result.user.email);
             
-            // ✅ SINCRONIZAR DATOS DEL USUARIO
-            this.currentUser = {
-                id: result.user.id,
-                nombre: result.user.nombre || result.user.nombres || result.user.email,  // ✅ Con tilde
-                name: result.user.nombre || result.user.nombres || result.user.email,    // ✅ Sin tilde
-                email: result.user.email,
-                role: result.user.rol,  // ✅ Inglés para compatibilidad
-                rol: result.user.rol,   // ✅ Español para dashboards
-                loggedIn: true,         // ✅ CRÍTICO: Marcar como logueado
-                ...result.user
-            };
-            
-            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+            // ✅ SINCRONIZAR DATOS DEL USUARIO CON NUEVOS CAMPOS
+            await this.syncUserData(result);
             
             // ✅ VERIFICACIÓN FINAL
             console.log('🔍 Verificación final login:', {
                 tokenEnAuthManager: !!this.token,
                 tokenEnRapiRushAPI: !!window.rapiRushAPI?.token,
                 tokenEnLocalStorage: !!localStorage.getItem('supabaseAuthToken'),
-                sessionStorageUser_id: sessionStorage.getItem('user_id'),
                 usuario: this.currentUser
             });
 
@@ -246,6 +270,7 @@ class AuthManager {
         }
     }
 
+    // ✅ REGISTRO CLIENTE CORREGIDO
     async register(userData) {
         try {
             console.log('📤 Registrando usuario...');
@@ -256,28 +281,26 @@ class AuthManager {
                 throw new Error('Error en el registro');
             }
 
-            // ✅ SOLO guardar token si es válido (no "null")
+            // ✅ SOLO guardar token si es válido
             if (result.session && result.session.access_token && result.session.access_token !== 'null') {
                 this.token = result.session.access_token;
                 window.rapiRushAPI.setToken(this.token);
                 localStorage.setItem('supabaseAuthToken', this.token);
                 console.log('🔐 Token guardado desde registro');
-            } else {
-                console.log('⚠️ Sin token válido - usuario debe verificar email');
-            }
-
-            // ✅ NO hacer syncUserData si no hay token válido
-            if (this.token) {
+                
+                // ✅ Sincronizar datos si hay token
                 await this.syncUserData(result.user);
             } else {
-                // ✅ Si no hay token, guardar info básica
+                console.log('⚠️ Sin token válido - usuario debe verificar email');
+                // ✅ Guardar info básica sin marcar como loggedIn
                 this.currentUser = {
-                    id: result.user.id,
+                    usuario_id: result.user.usuario_id,
                     email: result.user.email,
-                    name: result.user.nombres || result.user.email,
+                    name: result.user.cliente_nombre || result.user.email,
                     role: 'cliente',
-                    loggedIn: false  // ✅ NO está logueado hasta que verifique email
+                    loggedIn: false
                 };
+                this.saveToStorage();
             }
             
             this.updateGlobalUI();
@@ -291,6 +314,7 @@ class AuthManager {
         }
     }
 
+    // ✅ REGISTRO RESTAURANTE CORREGIDO
     async registerRestaurante(userData) {
         try {
             console.log('📤 Registrando restaurante...');
@@ -304,6 +328,7 @@ class AuthManager {
             if (result.session && result.session.access_token) {
                 this.token = result.session.access_token;
                 window.rapiRushAPI.setToken(this.token);
+                localStorage.setItem('supabaseAuthToken', this.token);
             }
 
             await this.syncUserData(result.user);
@@ -319,6 +344,7 @@ class AuthManager {
         }
     }
 
+    // ✅ REGISTRO REPARTIDOR CORREGIDO
     async registerRepartidor(userData) {
         try {
             console.log('📤 Registrando repartidor...');
@@ -332,6 +358,7 @@ class AuthManager {
             if (result.session && result.session.access_token) {
                 this.token = result.session.access_token;
                 window.rapiRushAPI.setToken(this.token);
+                localStorage.setItem('supabaseAuthToken', this.token);
             }
 
             await this.syncUserData(result.user);
@@ -347,12 +374,11 @@ class AuthManager {
         }
     }
 
+    // ✅ LOGOUT (igual, está bien)
     async logout() {
         try {
-            // ✅ LIMPIAR INMEDIATAMENTE para evitar doble-click
             this.clearAuth();
             
-            // ✅ INTENTAR LOGOUT EN API (no-blocking)
             if (this.token) {
                 try {
                     await window.rapiRushAPI.logout();
@@ -361,19 +387,30 @@ class AuthManager {
                 }
             }
             
-            // ✅ MOSTRAR TOAST
             this.showLogoutToast();
             
-            // ✅ REDIRIGIR INMEDIATAMENTE (sin delay largo)
             setTimeout(() => {
-                window.location.href = this.getHomeUrl();
+                // ✅ Redirigir al login en lugar del home
+                const currentPath = window.location.pathname;
+                if (currentPath.includes('/dashboard/')) {
+                    window.location.href = '../auth/login.html';
+                } else if (currentPath.includes('/auth/')) {
+                    window.location.href = 'login.html';
+                } else {
+                    window.location.href = 'auth/login.html';
+                }
             }, 500);
             
         } catch (error) {
             console.error('❌ Error crítico en logout:', error);
-            // ✅ FORZAR LIMPIEZA INCLUSO SI HAY ERROR
             this.clearAuth();
-            window.location.href = this.getHomeUrl();
+            // ✅ También redirigir al login en caso de error
+            const currentPath = window.location.pathname;
+            if (currentPath.includes('/dashboard/')) {
+                window.location.href = '../auth/login.html';
+            } else {
+                window.location.href = 'auth/login.html';
+            }
         }
     }
 
@@ -384,10 +421,14 @@ class AuthManager {
         
         localStorage.removeItem('currentUser');
         localStorage.removeItem('supabaseAuthToken');
-        localStorage.removeItem('user_id');
+        localStorage.removeItem('loggedIn');
+        localStorage.removeItem('usuario_id');
         localStorage.removeItem('user_email');
         localStorage.removeItem('user_role');
         localStorage.removeItem('user_name');
+        localStorage.removeItem('restaurante_id');
+        localStorage.removeItem('repartidor_id');
+        localStorage.removeItem('cliente_id');
         sessionStorage.clear();
         
         if (window.rapiRushAPI && typeof window.rapiRushAPI.clearToken === 'function') {
@@ -402,7 +443,7 @@ class AuthManager {
         console.log('✅ Autenticación limpiada');
     }
 
-    // ✅ RUTAS RELATIVAS INTELIGENTES
+    // ✅ RESTANTE DEL CÓDIGO IGUAL (está bien)
     getDashboardUrl() {
         const role = this.currentUser?.role || 'cliente';
         const currentPath = window.location.pathname;
@@ -439,7 +480,6 @@ class AuthManager {
         }
     }
 
-    // ✅ NUEVO MÉTODO: Verificar y mantener sesión
     ensureAuthenticated() {
         if (!this.isLoggedIn()) {
             console.warn('🔐 Sesión no válida, redirigiendo al login');
@@ -551,11 +591,24 @@ class AuthManager {
     }
 
     isLoggedIn() {
-        return this.currentUser !== null && this.currentUser.loggedIn === true;
+        // ✅ VERIFICACIÓN COMPLETA
+        const hasUser = this.currentUser !== null;
+        const hasLoggedInFlag = this.currentUser?.loggedIn === true;
+        const hasToken = this.token && this.isValidToken(this.token);
+        
+        const result = hasUser && hasLoggedInFlag && hasToken;
+        
+        console.log('🔍 isLoggedIn() check:', {
+            currentUser: hasUser,
+            loggedIn: this.currentUser?.loggedIn,
+            hasToken: hasToken,
+            result: result,
+            email: this.currentUser?.email
+        });
+        return result;
     }
 
     async isReady() {
-        // Esperar a que init() termine
         await this.initPromise;
         return true;
     }
@@ -588,7 +641,6 @@ class AuthManager {
         }, 1500);
     }
 
-    // ✅ MÉTODO NUEVO: Obtener headers de autenticación
     getAuthHeaders() {
         if (this.token && this.isValidToken(this.token)) {
             return {
@@ -605,8 +657,33 @@ class AuthManager {
 // Instancia global única
 window.authManager = new AuthManager();
 
+console.log('✅ authManager.js cargado. window.authManager:', !!window.authManager);
+
 // Función global para logout
 window.globalLogout = () => window.authManager.logout();
+
+// ✅ FUNCIÓN DE DIAGNÓSTICO GLOBAL
+window.debugAuth = () => {
+    console.log('\n' + '='.repeat(60));
+    console.log('🔍 DIAGNÓSTICO DE AUTENTICACIÓN');
+    console.log('='.repeat(60));
+    
+    const auth = window.authManager;
+    const localUser = localStorage.getItem('currentUser');
+    const localToken = localStorage.getItem('supabaseAuthToken');
+    
+    console.log('📦 authManager.currentUser:', auth.currentUser);
+    console.log('🔐 authManager.token (primeros 20 chars):', auth.token?.substring(0, 20) + '...');
+    console.log('📝 localStorage.currentUser:', localUser ? JSON.parse(localUser) : null);
+    console.log('📝 localStorage.token (primeros 20 chars):', localToken?.substring(0, 20) + '...');
+    console.log('✅ isLoggedIn():', auth.isLoggedIn());
+    console.log('✅ isValidToken():', auth.isValidToken(auth.token));
+    console.log('\n💡 Pasos a seguir:');
+    console.log('   1. Si isLoggedIn() = false, el problema es currentUser.loggedIn');
+    console.log('   2. Si hay token pero isValidToken() = false, regenerar token');
+    console.log('   3. Si localStorage está vacío, la sesión fue limpiada');
+    console.log('='.repeat(60) + '\n');
+};
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {

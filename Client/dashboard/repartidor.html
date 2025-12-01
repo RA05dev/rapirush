@@ -12,9 +12,11 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold text-warning" href="../index.html">
-              <h3>🚚 RapiRush</h3>
+            <a class="navbar-brand fw-bold text-warning d-flex align-items-center" href="../index.html">
+                <img src="../assets/Img/icon.png" alt="Logo de RapiRush" class="me-2" style="height: 40px;">
+                <h3 class="m-0">RapiRush</h3>
             </a>
+
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -22,8 +24,14 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item">
+                    <li class="nav-item mx-3">
                         <a class="nav-link" href="../index.html">Inicio</a>
+                    </li>
+                    <!-- Badge de Estado Disponible -->
+                    <li class="nav-item me-3">
+                        <button class="btn btn-sm" id="disponibleBadge" style="background-color: #10B981; color: white; border: none; cursor: pointer;" onclick="toggleDisponible(event)">
+                            🟢 <span id="disponibleBadgeText">DISPONIBLE</span>
+                        </button>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -31,13 +39,22 @@
                             <span id="userName">Repartidor</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="abrirModalPerfil()">
+                                    <i class="bi bi-gear"></i> Mi Perfil
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">
+                                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                            </a></li>
                         </ul>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
+
 
     <div class="container my-4">
         <div class="row">
@@ -106,11 +123,7 @@
                             ✅ Entregados <span id="entregadosTabCount" class="badge bg-info ms-2">0</span>
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="perfil-tab" data-bs-toggle="tab" data-bs-target="#perfil" type="button" role="tab">
-                            ⚙️ Perfil
-                        </button>
-                    </li>
+
                 </ul>
 
                 <div class="tab-content">
@@ -189,16 +202,6 @@
                                                 <input type="text" class="form-control" id="perfilPlaca">
                                             </div>
 
-                                            <div class="mb-3">
-                                                <label class="form-label">Disponible para Entregas</label>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="perfilDisponible">
-                                                    <label class="form-check-label" for="perfilDisponible">
-                                                        Sí, estoy disponible
-                                                    </label>
-                                                </div>
-                                            </div>
-
                                             <div class="d-flex gap-2">
                                                 <button type="submit" class="btn btn-success">
                                                     <i class="bi bi-check-lg"></i> Guardar Cambios
@@ -236,7 +239,65 @@
         </div>
     </div>
 
+    <!-- Modal Perfil Repartidor -->
+    <div class="modal fade" id="perfilModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-lines-fill"></i> Perfil del Repartidor
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="perfilForm" onsubmit="guardarPerfilRepartidor(event)">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" id="perfilNombre" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="perfilEmail" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="perfilTelefono">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Vehículo</label>
+                            <input type="text" class="form-control" id="perfilVehiculo">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Placa</label>
+                            <input type="text" class="form-control" id="perfilPlaca">
+                        </div>
+
+                        <!-- YA NO HAY DISPONIBLE AQUÍ -->
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check2"></i> Guardar Cambios
+                        </button>
+                        
+                        <button type="button" class="btn btn-secondary" onclick="cargarPerfilRepartidor()">
+                            <i class="bi bi-arrow-repeat"></i> Recargar
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/notificationManager.js"></script>
     <script src="../assets/js/api/rapiRushAPI.js"></script>
     <script src="../assets/js/api/cache.js"></script>
     <script src="../assets/js/authManager.js"></script>
@@ -308,66 +369,51 @@
             console.log('✅ Autenticación verificada. Repartidor ID:', repartidorId);
             document.getElementById('userName').textContent = repartidorName || 'Repartidor';
 
+            // ✅ CARGAR PERFIL DEL REPARTIDOR (para obtener es_disponible)
+            await cargarPerfilRepartidor();
+            
             // Cargar pedidos del repartidor
             loadOrders();
         });
 
-        // Cargar pedidos disponibles
+        // Cargar pedidos del repartidor usando rapiRushAPI
         async function loadOrders() {
             try {
-                // Obtener token
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
-
-                // Obtener todos los pedidos "listo" para que el repartidor pueda asignarse
-                    const response = await fetch(`http://localhost:3000/api/orders/repartidor/${repartidorId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                    });
-
+                console.log('📦 Cargando pedidos del repartidor...');
                 
-                if (!response.ok) {
-                    // Si no existe endpoint, intentar obtener los propios pedidos del repartidor
-                    await loadMyOrders();
-                    return;
+                // ✅ Usar rapiRushAPI en lugar de fetch directo
+                const response = await window.rapiRushAPI.getRepartidorOrders();
+                
+                console.log('📥 Respuesta del servidor completa:', response);
+                console.log('📥 Response.data:', response.data);
+                console.log('📥 Response.assignedOrders:', response.assignedOrders);
+                console.log('📥 Response.availableOrders:', response.availableOrders);
+                
+                // ✅ Manejar ambos formatos: nuevo {success, data} y viejo {success, assignedOrders, availableOrders}
+                if (response.data && Array.isArray(response.data)) {
+                    // Nuevo formato: todos los órdenes en un array
+                    console.log(`✅ Formato nuevo detectado: ${response.data.length} órdenes`);
+                    allOrders = response.data;
+                } else if (response.assignedOrders && response.availableOrders) {
+                    // Viejo formato: combinar ambos arrays
+                    console.log(`✅ Formato viejo detectado: ${response.assignedOrders.length} asignados + ${response.availableOrders.length} disponibles`);
+                    allOrders = [...(response.assignedOrders || []), ...(response.availableOrders || [])];
+                } else if (response.orders && Array.isArray(response.orders)) {
+                    // Alternativo
+                    console.log(`✅ Formato alternativo detectado: ${response.orders.length} órdenes`);
+                    allOrders = response.orders;
+                } else {
+                    console.warn('⚠️ Formato desconocido, usando array vacío');
+                    console.warn('⚠️ Estructura de respuesta:', Object.keys(response));
+                    allOrders = [];
                 }
                 
-                const data = await response.json();
-                allOrders = data.orders || [];
-                console.log('📦 Pedidos disponibles:', allOrders);
-                
+                console.log(`✅ Total de ${allOrders.length} pedidos cargados en allOrders`);
                 renderOrders();
             } catch (error) {
-                console.error('❌ Error:', error);
-                // Fallback: cargar solo los propios pedidos
-                await loadMyOrders();
-            }
-        }
-
-        // Cargar pedidos asignados al repartidor
-        async function loadMyOrders() {
-            try {
-                // Obtener token
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
-
-                const response = await fetch('http://localhost:3000/api/orders/repartidor/' + repartidorId, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!response.ok) throw new Error('Error al cargar pedidos');
+                console.error('❌ Error cargando pedidos:', error);
                 
-                const data = await response.json();
-                allOrders = data.orders || [];
-                console.log('📦 Mis pedidos:', allOrders);
-                
-                renderOrders();
-            } catch (error) {
-                console.error('❌ Error:', error);
-                
-                // ✅ Solo mostrar el error si hace más de 30 segundos que no se muestra
+                // ✅ Solo mostrar error cada 30 segundos
                 const now = Date.now();
                 if (now - lastErrorTime > 30000) {
                     showAlert('Error al cargar pedidos: ' + error.message, 'danger');
@@ -378,9 +424,12 @@
 
         // Renderizar pedidos por estado
         function renderOrders() {
-            const listos = allOrders.filter(o => o.status === 'listo' || o.estado === 'listo');
-            const encamino = allOrders.filter(o => o.status === 'en camino' || o.estado === 'en camino');
-            const entregados = allOrders.filter(o => o.status === 'entregado' || o.estado === 'entregado' || o.status === 'llegado' || o.estado === 'llegado');
+            // ✅ Filtrar por estado correcto (en BD es 'listo', 'camino', 'entregado', 'llegado')
+            const listos = allOrders.filter(o => (o.estado === 'listo') && !o.repartidor_id);
+            const encamino = allOrders.filter(o => ['camino', 'llegado'].includes(o.estado) && o.repartidor_id);
+            const entregados = allOrders.filter(o => o.estado === 'entregado');
+
+            console.log(`📊 Filtrados: ${listos.length} listos, ${encamino.length} en camino, ${entregados.length} entregados`);
 
             // Actualizar contadores
             document.getElementById('listosCount').textContent = listos.length;
@@ -390,8 +439,8 @@
             document.getElementById('entregadosCount').textContent = entregados.length;
             document.getElementById('entregadosTabCount').textContent = entregados.length;
 
-            // Calcular ganancia
-            const ganancia = (listos.concat(encamino).concat(entregados).reduce((sum, o) => sum + (o.total || 0), 0)) * 0.1; // 10% comisión
+            // Calcular ganancia - SOLO DE PEDIDOS ENTREGADOS
+            const ganancia = entregados.reduce((sum, o) => sum + (o.total || 0), 0) * 0.1; // 10% comisión solo de entregados
             document.getElementById('gananciaCount').textContent = ganancia.toFixed(2);
 
             // Renderizar cada grupo
@@ -412,52 +461,68 @@
                 return;
             }
 
-            container.innerHTML = orders.map(order => `
+            container.innerHTML = orders.map(order => {
+                // ✅ Extraer datos correctamente de la estructura anidada
+                const restaurante = Array.isArray(order.tb_restaurantes) ? order.tb_restaurantes[0] : order.tb_restaurantes;
+                const cliente = Array.isArray(order.tb_clientes) ? order.tb_clientes[0] : order.tb_clientes;
+                
+                const clienteName = cliente?.cliente_nombre || 'N/A';
+                const clientePhone = cliente?.cliente_telefono || 'N/A';
+                const direccion = order.direccion_entrega || 'N/A';
+                
+                return `
                 <div class="col-md-6 mb-4">
                     <div class="card border-left border-info">
                         <div class="card-body">
                             <h6 class="card-title">
-                                <strong>Pedido #${order.id.toString().slice(-6)}</strong>
-                                <span class="badge bg-info">${order.status || order.estado}</span>
+                                <strong>Pedido #${order.pedido_id}</strong>
+                                <span class="badge bg-info">${order.estado}</span>
                             </h6>
-                            <p class="mb-2"><strong>Cliente:</strong> ${order.cliente_nombre || 'N/A'}</p>
-                            <p class="mb-2"><strong>Dirección:</strong> ${order.delivery_address || order.direccion_entrega || 'N/A'}</p>
-                            <p class="mb-2"><strong>Teléfono:</strong> ${order.cliente_telefono || 'N/A'}</p>
+                            <p class="mb-2"><strong>Cliente:</strong> ${clienteName}</p>
+                            <p class="mb-2"><strong>Dirección:</strong> ${direccion}</p>
+                            <p class="mb-2"><strong>Teléfono:</strong> ${clientePhone}</p>
                             <p class="mb-3"><strong>Total:</strong> S/. ${(order.total || 0).toFixed(2)}</p>
-                            <button class="btn btn-sm btn-info" onclick="showOrderDetail(${order.id})">
+                            <button class="btn btn-sm btn-info" onclick="showOrderDetail('${order.pedido_id}')">
                                 Ver Detalles
                             </button>
+
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         // Mostrar detalles del pedido
         async function showOrderDetail(orderId) {
             try {
-                const response = await fetch('http://localhost:3000/api/orders/' + orderId);
-                if (!response.ok) throw new Error('Error al cargar detalles');
-                
-                const order = await response.json();
+                // ✅ Usar rapiRushAPI
+                const order = await window.rapiRushAPI.getOrderById(orderId);
                 const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+                
+                // ✅ Extraer datos correctamente
+                const restaurante = Array.isArray(order.tb_restaurantes) ? order.tb_restaurantes[0] : order.tb_restaurantes;
+                const cliente = Array.isArray(order.tb_clientes) ? order.tb_clientes[0] : order.tb_clientes;
                 
                 // Renderizar detalles
                 const detailBody = document.getElementById('orderDetailBody');
                 let html = `
                     <div class="mb-3">
                         <h6 class="text-primary">📋 Información del Pedido</h6>
-                        <p class="mb-1"><strong>Cliente:</strong> ${order.cliente_nombre || 'N/A'}</p>
-                        <p class="mb-1"><strong>Teléfono:</strong> ${order.cliente_telefono || 'N/A'}</p>
-                        <p class="mb-3"><strong>Estado:</strong> <span class="badge bg-info">${order.status || order.estado}</span></p>
+                        <p class="mb-1"><strong>Número:</strong> #${order.numero_pedido || order.pedido_id?.substring(0, 8) || 'N/A'}</p>
+                        <p class="mb-1"><strong>Cliente:</strong> ${cliente?.cliente_nombre || 'N/A'}</p>
+                        <p class="mb-1"><strong>Teléfono:</strong> ${cliente?.cliente_telefono || 'N/A'}</p>
+                        <p class="mb-3"><strong>Estado:</strong> <span class="badge bg-info">${order.estado}</span></p>
                     </div>
                     
                     <div class="mb-3">
-                        <h6 class="text-primary">🏠 Entrega</h6>
-                        <p class="mb-1"><strong>Dirección:</strong> ${order.delivery_address || order.direccion_entrega || 'N/A'}</p>
-                        <p class="mb-1"><strong>Distrito:</strong> ${order.district || order.distrito_entrega || 'N/A'}</p>
-                        ${order.referencia_entrega ? `<p class="mb-1"><strong>🔑 Referencia:</strong> ${order.referencia_entrega}</p>` : ''}
-                        ${order.nota_repartidor ? `<p class="mb-3"><strong>📝 Nota del Cliente:</strong> <em>"${order.nota_repartidor}"</em></p>` : ''}
+                        <h6 class="text-primary">🍽️ Restaurante</h6>
+                        <p class="mb-1"><strong>Nombre:</strong> ${restaurante?.restaurante_nombre || 'N/A'}</p>
+                        <p class="mb-3"><strong>Dirección:</strong> ${restaurante?.restaurante_direccion || 'N/A'}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-primary">🚚 Entrega</h6>
+                        <p class="mb-3"><strong>Dirección:</strong> ${order.direccion_entrega || 'N/A'}</p>
                     </div>
                     
                     <div class="mb-3">
@@ -465,16 +530,17 @@
                         <div class="list-group">`;
                 
                 // Agregar items
-                if (order.items && Array.isArray(order.items)) {
-                    order.items.forEach(item => {
+                if (order.tb_pedido_detalles && Array.isArray(order.tb_pedido_detalles)) {
+                    order.tb_pedido_detalles.forEach(item => {
+                        const subtotal = (item.precio_unitario || 0) * (item.cantidad || 0);
                         html += `
                             <div class="list-group-item">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h6 class="mb-0">${item.name || item.nombre_item}</h6>
-                                        <small class="text-muted">${item.quantity || item.cantidad}x</small>
+                                        <h6 class="mb-0">${item.nombre_item || 'Item'}</h6>
+                                        <small class="text-muted">${item.cantidad || 1}x @ S/. ${(item.precio_unitario || 0).toFixed(2)}</small>
                                     </div>
-                                    <span class="fw-bold">S/. ${((item.price || item.precio) * (item.quantity || item.cantidad)).toFixed(2)}</span>
+                                    <span class="fw-bold">S/. ${subtotal.toFixed(2)}</span>
                                 </div>
                             </div>`;
                     });
@@ -488,17 +554,17 @@
                 const footer = document.getElementById('orderDetailFooter');
                 footer.innerHTML = '';
 
-                const status = (order.status || order.estado || '').toLowerCase();
+                const estado = (order.estado || '').toLowerCase();
 
-                if (status === 'listo') {
+                if (estado === 'listo') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-warning" onclick="updateOrderStatus(${orderId}, 'en_camino')">
+                        <button type="button" class="btn btn-warning" onclick="recogerPedido('${orderId}')">
                             🚴 Recoger Pedido
                         </button>`;
-                } else if (status === 'en_camino' || status === 'en camino') {
+                } else if (estado === 'camino' || estado === 'llegado') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-success" onclick="updateOrderStatus(${orderId}, 'llegado')">
-                            📍 Confirmar Llegada
+                        <button type="button" class="btn btn-success" onclick="confirmarEntrega('${orderId}')">
+                            📍 Confirmar Entrega
                         </button>`;
                 }
 
@@ -511,36 +577,59 @@
             }
         }
 
-        // Actualizar estado del pedido
+        // Recoger pedido (asignar repartidor y cambiar a 'camino')
+        async function recogerPedido(orderId) {
+            if (!confirm('¿Recoger este pedido?')) return;
+
+            try {
+                console.log(`🚴 Recogiendo pedido ${orderId}`);
+                // ✅ assignRepartidor atomicamente asigna repartidor_id y cambia estado a 'camino'
+                await window.rapiRushAPI.assignRepartidor(orderId);
+                
+                showAlert('✅ Pedido recogido - Estado cambiado a En Camino', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+                
+                // Recargar pedidos
+                await loadOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        // Confirmar entrega
+        async function confirmarEntrega(orderId) {
+            if (!confirm('¿Confirmar entrega de este pedido?')) return;
+
+            try {
+                console.log(`✅ Confirmando entrega de pedido ${orderId}`);
+                // ✅ Cambiar estado a 'entregado'
+                await window.rapiRushAPI.updateOrderStatus(orderId, 'entregado');
+                
+                showAlert('✅ Pedido entregado exitosamente', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+                
+                // Recargar pedidos
+                await loadOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        // Actualizar estado del pedido (DEPRECATED - usar recogerPedido y confirmarEntrega)
         async function updateOrderStatus(orderId, newStatus) {
             if (!confirm(`¿Cambiar estado a "${newStatus}"?`)) return;
 
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
                 console.log(`🚀 Actualizando orden ${orderId} a estado: ${newStatus}`);
-                console.log(`📍 URL: http://localhost:3000/api/orders/${orderId}/status`);
-                console.log(`📦 Body:`, { estado: newStatus });
+                await window.rapiRushAPI.updateOrderStatus(orderId, newStatus);
                 
-                const response = await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ estado: newStatus })
-                });
-
-                console.log(`📊 Response status: ${response.status}`);
-                const data = await response.json();
-                console.log(`📊 Response data:`, data);
-
-                if (!response.ok) throw new Error(data.error || 'Error al actualizar');
-
                 showAlert(`✅ Pedido actualizado a: ${newStatus}`, 'success');
                 bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
                 
                 // Recargar pedidos
-                await loadMyOrders();
+                await loadOrders();
             } catch (error) {
                 console.error('❌ Error:', error);
                 showAlert('Error: ' + error.message, 'danger');
@@ -548,60 +637,174 @@
         }
 
         function showAlert(message, type) {
-            const alertContainer = document.getElementById('alertContainer');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            alertContainer.appendChild(alertDiv);
-
-            setTimeout(() => alertDiv.remove(), 5000);
+            window.globalShowAlert(message, type, 5000);
         }
 
         function logout() {
+            console.log('🔒 Logout clickeado en repartidor.html');
             if (confirm('¿Cerrar sesión?')) {
-                sessionStorage.clear();
-                localStorage.removeItem('user_email');
-                window.location.href = '../auth/login.html';
+                // ✅ Usar authManager para logout correcto
+                if (window.authManager) {
+                    window.authManager.logout();
+                } else {
+                    // Fallback si authManager no está disponible
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '../auth/login.html';
+                }
             }
         }
 
         // Cargar pedidos al iniciar
-        loadMyOrders();
-        cargarPerfilRepartidor(); // ← Cargar perfil también
+        loadOrders();
+        
+        // ✅ Cargar perfil con un pequeño delay para asegurar que el DOM esté listo
+        setTimeout(() => {
+            cargarPerfilRepartidor();
+        }, 500);
 
+        // ✅ ESTADO GLOBAL PARA DISPONIBLE
+        window.currentDisponible = false;
+
+        // ✅ FUNCIÓN PARA ACTUALIZAR EL BADGE
+        function actualizarBadgeDisponible() {
+            const badge = document.getElementById('disponibleBadge');
+            if (window.currentDisponible) {
+                badge.style.backgroundColor = '#10B981'; // Verde
+                badge.style.color = 'white';
+                badge.textContent = '🟢 DISPONIBLE';
+            } else {
+                badge.style.backgroundColor = '#EF4444'; // Rojo
+                badge.style.color = 'white';
+                badge.textContent = '🔴 NO DISPONIBLE';
+            }
+        }
+
+        // ✅ FUNCIÓN PARA TOGGLE DE DISPONIBILIDAD
+        async function toggleDisponible(event) {
+            event?.preventDefault?.();
+            
+            try {
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                // Alternar el estado
+                const newDisponible = !window.currentDisponible;
+
+                console.log(`🔄 Cambiando disponibilidad a: ${newDisponible}`);
+
+                // Enviar al backend usando el nuevo endpoint específico para disponible
+                const response = await fetch('http://localhost:3000/api/auth/disponible', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ disponible: newDisponible })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al actualizar disponibilidad');
+                }
+
+                // Actualizar estado global y UI
+                window.currentDisponible = newDisponible;
+                actualizarBadgeDisponible();
+                
+                // Actualizar checkbox en el formulario si existe
+                const checkboxDisponible = document.getElementById('perfilDisponible');
+                if (checkboxDisponible) {
+                    checkboxDisponible.checked = newDisponible;
+                }
+
+                showAlert(
+                    `✅ Estado actualizado: ${newDisponible ? 'DISPONIBLE ✓' : 'NO DISPONIBLE ✗'}`,
+                    newDisponible ? 'success' : 'warning'
+                );
+
+                console.log('✅ Disponibilidad actualizada:', newDisponible);
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error actualizando disponibilidad: ' + error.message, 'danger');
+            }
+        }
+
+    function abrirModalPerfil() {
+    cargarPerfilRepartidor(); // Cargar datos actuales
+    const modal = new bootstrap.Modal(document.getElementById('perfilModal'));
+    modal.show();
+}
         // ✅ FUNCIONES PARA PERFIL REPARTIDOR
         async function cargarPerfilRepartidor() {
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                const repartidorId = repartidorId || window.authManager?.getCurrentUser()?.id;
+                console.log('🔄 Iniciando cargarPerfilRepartidor()...');
                 
-                if (!token || !repartidorId) throw new Error('No autenticado');
+                const token = localStorage.getItem('supabaseAuthToken');
+                console.log('🔑 Token disponible:', !!token);
+                
+                if (!token) throw new Error('No autenticado');
 
-                // Para repartidor, usamos el endpoint de usuarios
+                // Obtener el perfil del repartidor desde el backend
+                console.log('📡 Llamando a GET /api/auth/profile...');
                 const response = await fetch(`http://localhost:3000/api/auth/profile`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
+                console.log('📊 Respuesta del servidor:', response.status, response.statusText);
+
                 if (!response.ok) {
-                    console.warn('⚠️ Endpoint de perfil no disponible, usando datos del storage');
+                    console.warn('⚠️ Endpoint de perfil no disponible (status:', response.status, ')');
                     const currentUser = window.authManager?.getCurrentUser();
-                    document.getElementById('perfilNombre').value = currentUser?.nombre || '';
-                    document.getElementById('perfilEmail').value = currentUser?.email || '';
+                    const perfilNombre = document.getElementById('perfilNombre');
+                    const perfilEmail = document.getElementById('perfilEmail');
+                    if (perfilNombre) perfilNombre.value = currentUser?.nombre || '';
+                    if (perfilEmail) perfilEmail.value = currentUser?.email || '';
                     return;
                 }
 
                 const data = await response.json();
+                console.log('📥 Datos del perfil recibidos:', data);
+                
                 const usuario = data.user || data.data;
+                console.log('👤 Usuario mapeado:', usuario);
 
-                document.getElementById('perfilNombre').value = usuario.nombre || '';
-                document.getElementById('perfilEmail').value = usuario.email || '';
-                document.getElementById('perfilTelefono').value = usuario.telefono || '';
-                document.getElementById('perfilVehiculo').value = usuario.vehiculo || '';
-                document.getElementById('perfilPlaca').value = usuario.placa || '';
-                document.getElementById('perfilDisponible').checked = usuario.disponible !== false;
+                // Mapear campos de tb_repartidores (que tienen prefijo repartidor_) a los campos del formulario
+                const campos = {
+                    'perfilNombre': usuario.repartidor_nombre || usuario.nombre || '',
+                    'perfilEmail': usuario.email || '',
+                    'perfilTelefono': usuario.repartidor_telefono || usuario.telefono || '',
+                    'perfilVehiculo': usuario.tipo_vehiculo || usuario.vehiculo || '',
+                    'perfilPlaca': usuario.placa || ''
+                };
+
+                console.log('📝 Campos a asignar:', campos);
+
+                // Asignar valores con verificación de que el elemento existe
+                Object.entries(campos).forEach(([id, valor]) => {
+                    const elemento = document.getElementById(id);
+                    if (elemento) {
+                        elemento.value = valor;
+                        console.log(`✅ Asignado ${id} = ${valor}`);
+                    } else {
+                        console.warn(`❌ Elemento no encontrado: ${id}`);
+                    }
+                });
+
+                // Actualizar checkbox si existe
+                const checkboxDisponible = document.getElementById('perfilDisponible');
+                if (checkboxDisponible) {
+                    checkboxDisponible.checked = usuario.es_disponible === true;
+                    console.log(`✅ Checkbox perfilDisponible = ${usuario.es_disponible}`);
+                } else {
+                    console.warn('❌ Elemento perfilDisponible no encontrado');
+                }
+
+                // Guardar estado actual en variable global para toggle
+                window.currentDisponible = usuario.es_disponible === true;
+                actualizarBadgeDisponible();
 
                 console.log('✅ Perfil cargado:', usuario);
             } catch (error) {
@@ -613,12 +816,19 @@
         async function guardarPerfilRepartidor(event) {
             event.preventDefault();
 
+            // Obtener valores del formulario de forma segura
+            const perfilNombre = document.getElementById('perfilNombre');
+            const perfilTelefono = document.getElementById('perfilTelefono');
+            const perfilVehiculo = document.getElementById('perfilVehiculo');
+            const perfilPlaca = document.getElementById('perfilPlaca');
+            const perfilDisponible = document.getElementById('perfilDisponible');
+
             const perfilData = {
-                nombre: document.getElementById('perfilNombre').value.trim(),
-                telefono: document.getElementById('perfilTelefono').value.trim(),
-                vehiculo: document.getElementById('perfilVehiculo').value.trim(),
-                placa: document.getElementById('perfilPlaca').value.trim(),
-                disponible: document.getElementById('perfilDisponible').checked
+                nombre: perfilNombre?.value?.trim() || '',
+                telefono: perfilTelefono?.value?.trim() || '',
+                vehiculo: perfilVehiculo?.value?.trim() || '',
+                placa: perfilPlaca?.value?.trim() || '',
+                disponible: perfilDisponible?.checked || false
             };
 
             try {
@@ -641,11 +851,16 @@
 
                 if (!response.ok) throw new Error(data.error || 'Error al actualizar perfil');
 
+                // Actualizar estado global de disponible
+                window.currentDisponible = perfilData.disponible;
+                actualizarBadgeDisponible();
+
                 showAlert('✅ Perfil actualizado exitosamente', 'success');
 
                 // Actualizar nombre en navbar
-                if (perfilData.nombre) {
-                    document.getElementById('userName').textContent = perfilData.nombre;
+                const userName = document.getElementById('userName');
+                if (userName && perfilData.nombre) {
+                    userName.textContent = perfilData.nombre;
                 }
 
             } catch (error) {
@@ -655,7 +870,7 @@
         }
 
         // Recargar cada 10 segundos
-        setInterval(loadMyOrders, 10000);
+        setInterval(loadOrders, 10000);
     </script>
 </body>
 </html>

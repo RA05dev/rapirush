@@ -1,10 +1,8 @@
 // assets/js/restaurantes.js - VERSIÓN CORREGIDA Y COMPLETA
 
-// Función para obtener ID simple de restaurante
-function getSimpleRestaurantId(uuid) {
-    const firstChar = uuid.split('-')[0][0];
-    return parseInt(firstChar, 16);
-}
+// ✅ NO CONVERTIR UUID A ID SIMPLE
+// El backend retorna `id` que ya es el UUID completo
+// Usarlo directamente en URLs
 
 // === FUNCIONES UNIVERSALES DE RENDERIZADO ===
 
@@ -15,8 +13,8 @@ function renderRestaurantCard(r, showPopular = false) {
     ? r.categories.map(c => c.name || c.id || '').join(', ')
     : r.categories || '';
   
-  // Pre-calcular valores
-  const simpleId = getSimpleRestaurantId(r.id);
+  // ✅ USAR UUID DIRECTAMENTE (no convertir a simple ID)
+  const restaurantId = r.id;  // ← Ya es UUID desde el backend
   const deliveryCostFormatted = (r.deliveryCost || 0).toFixed(2);
   
   // Usar valores directamente
@@ -46,7 +44,7 @@ function renderRestaurantCard(r, showPopular = false) {
             <p class="text-muted small mb-3">
               <i class="bi bi-clock"></i> ${deliveryTime} • S/. ${deliveryCostFormatted} delivery
             </p>
-            <a href="restaurante.html?id=${simpleId}" class="btn btn-primary w-100">Ver menú</a>
+            <a href="restaurante.html?id=${restaurantId}" class="btn btn-primary w-100">Ver menú</a>
           </div>
         </div>
       </div>
@@ -73,7 +71,7 @@ function renderRestaurantCard(r, showPopular = false) {
             <div><i class="ri-motorbike-fill"></i> S/. ${deliveryCostFormatted} delivery</div>
             <div>${isOpen ? '🟢 Abierto' : '🔴 Cerrado'}</div>
           </div>
-          <a href="restaurante.html?id=${simpleId}" class="btn btn-primary w-100">Ver menú</a>
+          <a href="restaurante.html?id=${restaurantId}" class="btn btn-primary w-100">Ver menú</a>
         </div>
       </div>
     </div>
@@ -125,7 +123,6 @@ function renderRestaurantsList(data, containerId, showPopular = false) {
 async function fetchAllRestaurants() {
   try {
     // ✅ ASEGURAR que cacheManager está disponible
-    // Esperar máximo 1 segundo a que cache.js se cargue
     let cacheReady = window.cacheManager;
     let waitTime = 0;
     while (!cacheReady && waitTime < 1000) {
@@ -134,18 +131,18 @@ async function fetchAllRestaurants() {
       waitTime += 50;
     }
 
-    // ✅ PRIMERO: Intentar obtener del caché mejorado
+    // ✅ PRIMERO: Intentar obtener del caché mejorado (SOLO si tiene datos)
     if (window.cacheManager) {
       const cached = window.cacheManager.getRestaurants();
-      if (cached) {
-        console.log('📦 Restaurantes obtenidos del CACHÉ (sin llamada a BD)');
+      if (cached && cached.length > 0) {
+        console.log(`📦 Restaurantes obtenidos del CACHÉ (${cached.length} restaurantes)`);
         return cached;
       }
     }
 
-    // ✅ SEGUNDO: Usar caché local si existe
-    if (cachedRestaurants) {
-      console.log('📋 Usando restaurantes en cache local');
+    // ✅ SEGUNDO: Usar caché local si existe y tiene datos
+    if (cachedRestaurants && cachedRestaurants.length > 0) {
+      console.log(`📋 Usando restaurantes en cache local (${cachedRestaurants.length} restaurantes)`);
       return cachedRestaurants;
     }
 
@@ -167,11 +164,18 @@ async function fetchAllRestaurants() {
 
     console.log(`📥 Restaurantes obtenidos: ${result.data?.length || 0}`);
     
-    // ✅ GUARDAR EN AMBOS CACHES
-    cachedRestaurants = result.data || [];
-    if (window.cacheManager) {
-      window.cacheManager.setRestaurants(cachedRestaurants);
+    // ✅ GUARDAR EN AMBOS CACHES (SOLO si hay datos)
+    if (result.data && result.data.length > 0) {
+      cachedRestaurants = result.data;
+      if (window.cacheManager) {
+        window.cacheManager.setRestaurants(cachedRestaurants);
+      }
+      console.log(`✅ ${cachedRestaurants.length} restaurantes guardados en caché`);
+    } else {
+      console.error('❌ API devolvió array vacío');
+      cachedRestaurants = [];
     }
+    
     return cachedRestaurants;
 
   } catch (error) {

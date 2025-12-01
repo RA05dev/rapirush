@@ -1,8 +1,15 @@
-// checkout.js - VERSIÓN MEJORADA con verificación de sesión
+// checkout.js - VERSIÓN SIMPLIFICADA CON QR_IMG
+console.log('🔄 Iniciando checkout...');
 
 // 🔐 VERIFICAR SESIÓN AL CARGAR LA PÁGINA
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔄 Iniciando checkout...');
+    console.log('🏠 Checkout - DOM cargado');
+    
+    // ✅ VERIFICAR CACHE MANAGER
+    if (!window.cacheManager) {
+        console.warn('⚠️ cacheManager no disponible - continuando sin caché');
+    }
+    
     checkAuthStatus();
     loadOrderSummary();
     setupEventListeners();
@@ -51,10 +58,9 @@ function redirectToLogin() {
     console.log('🔄 Redirigiendo al login...');
     // Guardar la página actual para regresar después del login
     sessionStorage.setItem('redirectAfterLogin', 'checkout.html');
-    
-    // ✅ RUTA CORRECTA: checkout.html está en Client/, auth está en Client/auth/
     window.location.href = '../auth/login.html';
 }
+
 function prefillUserData(user) {
     console.log('📝 Prellenando datos del usuario...');
     
@@ -73,7 +79,9 @@ function prefillUserData(user) {
 }
 
 function setupEventListeners() {
-    // Mostrar/ocultar sección de tarjeta
+    console.log('🎯 Configurando event listeners...');
+    
+    // Mostrar/ocultar sección de tarjeta y QR
     document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const cardSection = document.getElementById('card-details-section');
@@ -84,10 +92,13 @@ function setupEventListeners() {
                 if (qrSection) qrSection.style.display = 'none';
             } else if (this.value === 'digital') {
                 cardSection.style.display = 'none';
-                if (qrSection) qrSection.style.display = 'block';
-                // Generar QR cuando se selecciona
-                generatePaymentQR();
+                if (qrSection) {
+                    qrSection.style.display = 'block';
+                    // ✅ ACTUALIZAR MONTO EN QR (SOLO ESTO)
+                    updateQRAmount();
+                }
             } else {
+                // Efectivo
                 cardSection.style.display = 'none';
                 if (qrSection) qrSection.style.display = 'none';
             }
@@ -114,6 +125,16 @@ function setupEventListeners() {
             }
             e.target.value = value;
         });
+    }
+}
+
+// ✅ FUNCIÓN SIMPLE PARA ACTUALIZAR MONTO EN QR
+function updateQRAmount() {
+    const total = getOrderTotal();
+    const qrAmountElement = document.getElementById('qr-amount');
+    if (qrAmountElement) {
+        qrAmountElement.textContent = `S/. ${total.toFixed(2)}`;
+        console.log('💰 Monto QR actualizado:', total.toFixed(2));
     }
 }
 
@@ -162,6 +183,9 @@ function loadOrderSummary() {
     document.getElementById('summary-delivery').textContent = `S/. ${deliveryFee.toFixed(2)}`;
     document.getElementById('summary-discount').textContent = `- S/. ${discount.toFixed(2)}`;
     document.getElementById('summary-total').textContent = `S/. ${total.toFixed(2)}`;
+    
+    // ✅ ACTUALIZAR MONTO EN QR POR DEFECTO
+    updateQRAmount();
     
     console.log('✅ Resumen cargado - Total: S/.', total.toFixed(2));
 }
@@ -219,21 +243,19 @@ async function confirmOrder() {
         const notes = document.getElementById('notes').value;
         const reference = document.getElementById('reference').value;
 
-        // ✅ NO agregar notas como item - se envían por separado al backend
-        const cartSinNotas = [...cart];
-
         const orderData = {
-            items: cartSinNotas,
+            items: cart,
             subtotal: subtotal,
             delivery: deliveryFee,
             discount: discount,
             total: total,
-            address: direccionCompleta,
+            address: document.getElementById('address').value,
+            distrito: document.getElementById('district').value,
             phone: document.getElementById('phone').value,
             customerName: customerName,
             paymentMethod: paymentMethod,
-            notes: notes,              // ← Se envía directamente las notas
-            reference: reference       // ← Se envía directamente la referencia
+            notes: notes,
+            reference: reference
         };
 
         console.log('📦 Enviando pedido a servidor...', orderData);
@@ -241,10 +263,10 @@ async function confirmOrder() {
         // ✅ GUARDAR EN LA BASE DE DATOS
         const result = await window.rapiRushAPI.createOrder(orderData);
         
-        const orderNumber = result.order.numero;
+        const orderNumber = result.order.numero_pedido;
         document.getElementById('order-number').textContent = orderNumber;
 
-        console.log('✅ Pedido guardado en base de datos:', result.order.id);
+        console.log('✅ Pedido guardado en base de datos:', result.order.pedido_id);
 
         // ✅ TAMBIÉN GUARDAR EN LOCALSTORAGE (para compatibilidad)
         const localOrder = {
@@ -289,66 +311,6 @@ async function confirmOrder() {
         // Restaurar botón
         confirmBtn.innerHTML = originalText;
         confirmBtn.disabled = false;
-    }
-}
-
-// ✅ FUNCIÓN PARA GENERAR QR DE PAGO
-function generatePaymentQR() {
-    try {
-        const qrContainer = document.getElementById('qr-code');
-        
-        if (!qrContainer) {
-            console.warn('⚠️ Contenedor de QR no encontrado en el DOM');
-            return;
-        }
-
-        // ✅ VERIFICAR que QRCode library esté disponible
-        if (typeof QRCode === 'undefined') {
-            console.error('❌ QRCode.js no está cargado');
-            qrContainer.innerHTML = '<p class="alert alert-danger">Error: No se pudo cargar la librería de QR</p>';
-            return;
-        }
-
-        // Limpiar QR anterior completamente
-        qrContainer.innerHTML = '';
-
-        // Obtener total del pedido
-        const totalEl = document.getElementById('summary-total');
-        const total = totalEl ? parseFloat(totalEl.textContent.replace('S/. ', '').trim()) : 100;
-
-        // ✅ GENERAR REFERENCIA ÚNICA
-        const reference = `RAPIRUST-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-        
-        // Datos para el QR (formato simplificado para Yape/Plin)
-        const qrData = `https://rapiRush.pe/pay?amount=${total}&reference=${reference}`;
-
-        console.log('📱 Generando QR para:', { qrData, total, reference });
-
-        // ✅ GENERAR CÓDIGO QR CON PARÁMETROS EXPLÍCITOS
-        const qrInstance = new QRCode(qrContainer, {
-            text: qrData,
-            width: 250,
-            height: 250,
-            colorDark: "#000000",
-            colorLight: "#FFFFFF",
-            correctLevel: QRCode.CorrectLevel.H,
-            useSVG: false
-        });
-
-        // ✅ VERIFICAR que el QR se generó correctamente
-        if (qrContainer.children.length === 0) {
-            console.warn('⚠️ QRCode no generó elemento visible');
-            qrContainer.innerHTML += '<p class="alert alert-warning">Error al generar QR, intente seleccionar otro método</p>';
-        } else {
-            console.log('✅ QR generado exitosamente');
-        }
-
-    } catch (error) {
-        console.error('❌ Error generando QR:', error);
-        const qrContainer = document.getElementById('qr-code');
-        if (qrContainer) {
-            qrContainer.innerHTML = `<p class="alert alert-danger">Error al generar QR: ${error.message}</p>`;
-        }
     }
 }
 

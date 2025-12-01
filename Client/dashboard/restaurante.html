@@ -12,8 +12,9 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold text-warning" href="../index.html">
-              <h3>🚚 RapiRush</h3>
+            <a class="navbar-brand fw-bold text-warning d-flex align-items-center" href="../index.html">
+                <img src="../assets/Img/icon.png" alt="Logo de RapiRush" class="me-2" style="height: 40px;">
+                <h3 class="m-0">RapiRush</h3>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -22,8 +23,14 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item">
+                    <li class="nav-item mx-3">
                         <a class="nav-link" href="../index.html">Inicio</a>
+                    </li>
+                    <!-- Badge de Estado Abierto/Cerrado -->
+                    <li class="nav-item me-3">
+                        <button class="btn btn-sm" id="estadoBadge" style="background-color: #10B981; color: white; border: none; cursor: pointer;" onclick="toggleEstado(event)">
+                            🟢 <span id="estadoBadgeText">ABIERTO</span>
+                        </button>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -31,7 +38,15 @@
                             <span id="userName">Restaurante</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="abrirModalPerfil()">
+                                    <i class="bi bi-gear"></i> Mi Perfil
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">
+                                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                            </a></li>
                         </ul>
                     </li>
                 </ul>
@@ -73,11 +88,6 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="productos-tab" data-bs-toggle="tab" data-bs-target="#productos" type="button" role="tab">
                             📦 Mis Productos
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="perfil-tab" data-bs-toggle="tab" data-bs-target="#perfil" type="button" role="tab">
-                            ⚙️ Perfil
                         </button>
                     </li>
                 </ul>
@@ -131,67 +141,11 @@
                                     <i class="bi bi-plus-lg"></i> Agregar Producto
                                 </button>
                             </div>
-                            <div id="productosContainer" class="col-12">
-                                <div class="text-center text-muted py-5">
-                                    <i class="bi bi-inbox fs-1"></i>
-                                    <p>No hay productos cargados</p>
-                                </div>
-                            </div>
                         </div>
-                    </div>
-
-                    <!-- Perfil -->
-                    <div class="tab-pane fade" id="perfil" role="tabpanel">
-                        <div class="row">
-                            <div class="col-lg-8 mx-auto">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5><i class="bi bi-pencil-square"></i> Editar Perfil del Restaurante</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <form id="perfilForm" onsubmit="guardarPerfilRestaurante(event)">
-                                            <div class="mb-3">
-                                                <label class="form-label">Nombre del Restaurante</label>
-                                                <input type="text" class="form-control" id="perfilNombre" required>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Descripción</label>
-                                                <textarea class="form-control" id="perfilDescripcion" rows="3"></textarea>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Foto del Restaurante (URL)</label>
-                                                <input type="url" class="form-control" id="perfilImagen">
-                                                <small class="text-muted">Puedes usar URLs de Unsplash o de otro servicio</small>
-                                            </div>
-
-                                            <div class="mb-3" id="previewImagenDiv">
-                                                <label class="form-label">Vista Previa</label>
-                                                <img id="previewImagen" src="" alt="Preview" class="img-fluid rounded" style="max-height: 200px; display: none;">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Dirección</label>
-                                                <input type="text" class="form-control" id="perfilDireccion">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Teléfono</label>
-                                                <input type="tel" class="form-control" id="perfilTelefono">
-                                            </div>
-
-                                            <div class="d-flex gap-2">
-                                                <button type="submit" class="btn btn-success">
-                                                    <i class="bi bi-check-lg"></i> Guardar Cambios
-                                                </button>
-                                                <button type="button" class="btn btn-secondary" onclick="cargarPerfilRestaurante()">
-                                                    <i class="bi bi-arrow-clockwise"></i> Recargar
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
+                        <div class="row" id="productosContainer">
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p>No hay productos cargados</p>
                             </div>
                         </div>
                     </div>
@@ -227,42 +181,47 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addProductForm">
-                        <div class="mb-3">
-                            <label class="form-label">Nombre del Producto *</label>
-                            <input type="text" class="form-control" id="productName" required>
+                    <div class="row">
+                        <div class="col-md-7">
+                            <form id="addProductForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre del Producto *</label>
+                                    <input type="text" class="form-control" id="productName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción</label>
+                                    <textarea class="form-control" id="productDesc" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Categoría *</label>
+                                    <select class="form-control" id="productCategory" required>
+                                        <option value="">Selecciona una categoría</option>
+                                        <!-- Las opciones se cargarán con cargarCategorias() -->
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Precio Base *</label>
+                                    <input type="number" class="form-control" id="productPrice" step="0.01" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">URL de Imagen</label>
+                                    <input type="url" class="form-control" id="productImage" placeholder="https://ejemplo.com/imagen.jpg" oninput="updateProductPreview()">
+                                </div>
+                            </form>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control" id="productDesc" rows="3"></textarea>
+                        <div class="col-md-5">
+                            <div class="card bg-light h-100">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">📸 Vista Previa</h6>
+                                    <img id="productImagePreview" src="" alt="Preview" class="img-fluid rounded" style="max-height: 250px; display: none; margin-top: 10px;">
+                                    <div id="previewPlaceholder" class="text-muted" style="padding: 60px 20px;">
+                                        <i class="bi bi-image" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <p style="margin-top: 10px; font-size: 0.9rem;">La imagen aparecerá aquí</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Categoría *</label>
-                            <select class="form-control" id="productCategory" required>
-                                <option value="">Selecciona una categoría</option>
-                                <option value="Pollo">Pollo</option>
-                                <option value="Pizzas">Pizzas</option>
-                                <option value="Hamburguesas">Hamburguesas</option>
-                                <option value="Sushi">Sushi</option>
-                                <option value="Pasteles">Pasteles</option> 
-                                <option value="Postres">Postres/option> 
-                                <option value="Mexicana">Mexicana</option>
-                                <option value="Italiana">Italiana</option>
-                                <option value="China">China</option>
-                                <option value="Bebidas">Bebidas</option>
-                                <option value="Complementos">Complementos</option>
-                                <option value="Mas">Otros</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Precio Base *</label>
-                            <input type="number" class="form-control" id="productPrice" step="0.01" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">URL de Imagen</label>
-                            <input type="url" class="form-control" id="productImage" placeholder="https://ejemplo.com/imagen.jpg">
-                        </div>
-                    </form>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -272,7 +231,65 @@
         </div>
     </div>
 
+    <!-- Modal Perfil Restaurante -->
+    <div class="modal fade" id="perfilModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-lines-fill"></i> Perfil del Restaurante
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="perfilForm" onsubmit="guardarPerfilRestaurante(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre del Restaurante</label>
+                            <input type="text" class="form-control" id="perfilNombre" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" id="perfilDescripcion" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Foto del Restaurante (URL)</label>
+                            <input type="url" class="form-control" id="perfilImagen">
+                            <small class="text-muted">Puedes usar URLs de Unsplash o de otro servicio</small>
+                        </div>
+
+                        <div class="mb-3" id="previewImagenDiv">
+                            <label class="form-label">Vista Previa</label>
+                            <img id="previewImagen" src="" alt="Preview" class="img-fluid rounded" style="max-height: 200px; display: none;">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="perfilDireccion">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="perfilTelefono">
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check2"></i> Guardar Cambios
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="cargarPerfilRestaurante()">
+                                <i class="bi bi-arrow-repeat"></i> Recargar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/notificationManager.js"></script>
     <script src="../assets/js/api/rapiRushAPI.js"></script>
     <script src="../assets/js/api/cache.js"></script>
     <script src="../assets/js/authManager.js"></script>
@@ -282,6 +299,7 @@
         let restauranteId;
         let restauranteName;
         let userRole;
+        let currentEstado = false; // Estado de abierto/cerrado
 
         // ✅ ESPERAR A QUE EL DOM ESTÉ LISTO ANTES DE VERIFICAR
         document.addEventListener('DOMContentLoaded', async function() {
@@ -349,48 +367,39 @@
                 console.log('✅ Autenticación verificada. Restaurante ID:', restauranteId);
                 document.getElementById('userName').textContent = restauranteName || 'Restaurante';
 
-                // Cargar datos del restaurante
+                // ✅ Cargar datos del restaurante DENTRO del setTimeout después de asignar restauranteId
                 loadOrders();
+                loadProducts();
+                cargarPerfilRestaurante();
             }, 500); // 500ms de delay para sincronización completa
         });
 
-        // Cargar pedidos del restaurante
-
+        // ✅ Cargar pedidos del restaurante (función async correctamente definida)
         async function loadOrders() {
-        try {
-            const token = localStorage.getItem('supabaseAuthToken');
-            if (!token) throw new Error('No autenticado');
+            try {
+                console.log('📋 Iniciando loadOrders...');
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-            const response = await fetch('http://localhost:3000/api/orders/restaurant/' + restauranteId, {
-            headers: { 'Authorization': `Bearer ${token}` }
-            });
+                const orders = await api.getRestaurantOrders();
+                restauranteOrders = orders || [];
+                console.log('📦 Pedidos del restaurante:', restauranteOrders);
+                console.log('📊 Total de pedidos:', restauranteOrders.length);
 
-            console.log('🔎 Response Status:', response.status);
-
-            if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || `Error ${response.status} al cargar pedidos`);
+                renderOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert(error.message, 'danger');
             }
-
-            const data = await response.json();
-            restauranteOrders = data.orders || [];
-            console.log('📦 Pedidos del restaurante:', restauranteOrders);
-            console.log('📊 Total de pedidos:', restauranteOrders.length);
-
-            renderOrders();
-        } catch (error) {
-            console.error('❌ Error:', error);
-            showAlert(error.message, 'danger'); // 👈 ya no concatenamos dos veces
-        }
         }
 
         // Renderizar pedidos por estado
         function renderOrders() {
-            // ✅ NUEVO: Filtrar por el estado correcto que BDD retorna (status viene del backend)
-            const recibidos = restauranteOrders.filter(o => o.status === 'recibido');
-            const aceptados = restauranteOrders.filter(o => o.status === 'aceptado');
-            const preparando = restauranteOrders.filter(o => o.status === 'preparando');
-            const listos = restauranteOrders.filter(o => o.status === 'listo');
+            // ✅ FILTRAR por estado usando el campo correcto de la BD
+            const recibidos = restauranteOrders.filter(o => o.estado === 'recibido');
+            const aceptados = restauranteOrders.filter(o => o.estado === 'aceptado');
+            const preparando = restauranteOrders.filter(o => o.estado === 'preparando');
+            const listos = restauranteOrders.filter(o => o.estado === 'listo');
 
             // Actualizar contadores
             document.getElementById('recibidosCount').textContent = recibidos.length;
@@ -422,14 +431,14 @@
                     <div class="card border-left border-primary">
                         <div class="card-body">
                             <h6 class="card-title">
-                                <strong>Pedido #${order.id.toString().slice(-6)}</strong>
-                                <span class="badge ${getStatusBadgeClass(order.status)}">${order.status}</span>
+                                <strong>Pedido #${order.pedido_id.toString().slice(-6)}</strong>
+                                <span class="badge ${getStatusBadgeClass(order.estado)}">${order.estado}</span>
                             </h6>
-                            <p class="mb-2"><strong>Cliente:</strong> ${order.cliente_nombres || 'N/A'}</p>
-                            <p class="mb-2"><strong>Dirección:</strong> ${order.delivery_address || 'N/A'}</p>
+                            <p class="mb-2"><strong>Cliente:</strong> ${order.nombre_cliente || 'N/A'}</p>
+                            <p class="mb-2"><strong>Dirección:</strong> ${order.direccion_entrega || 'N/A'}</p>
                             <p class="mb-2"><strong>Total:</strong> S/. ${(order.total || 0).toFixed(2)}</p>
-                            <p class="mb-3"><strong>Items:</strong> ${order.item_count || 0} productos</p>
-                            <button class="btn btn-sm btn-info" onclick="showOrderDetail(${order.id})">
+                            <p class="mb-3"><strong>Items:</strong> ${(order.tb_pedido_detalles?.length || 0)} productos</p>
+                            <button class="btn btn-sm btn-info" onclick="showOrderDetail('${order.pedido_id}')">
                                 Ver Detalles
                             </button>
                         </div>
@@ -438,31 +447,24 @@
             `).join('');
         }
 
-        function getStatusBadgeClass(status) {
+        function getStatusBadgeClass(estado) {
             const classes = {
                 'recibido': 'bg-info text-white',
                 'aceptado': 'bg-success',
                 'preparando': 'bg-warning text-dark',
                 'listo': 'bg-danger'
             };
-            return classes[status] || 'bg-secondary';
+            return classes[estado] || 'bg-secondary';
         }
 
         // ✅ CARGAR PRODUCTOS DEL RESTAURANTE
         async function loadProducts() {
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) return;
+                console.log('📦 Cargando productos...', { restauranteId });
+                const api = window.rapiRushAPI;
+                if (!api) return;
 
-                const response = await fetch(`http://localhost:3000/api/products?restaurant_id=${restauranteId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!response.ok) throw new Error('Error al cargar productos');
-                
-                const data = await response.json();
-                const products = data.data || data.products || [];
+                const products = await api.getRestaurantProducts(restauranteId);
                 console.log('📦 Productos del restaurante:', products);
                 
                 renderProducts(products);
@@ -490,10 +492,10 @@
                         <div class="card-body">
                             <h5 class="card-title">${product.nombre}</h5>
                             <p class="card-text text-muted small">${product.descripcion || 'Sin descripción'}</p>
-                            <p class="mb-2"><strong>Categoría:</strong> ${product.categoria || 'N/A'}</p>
-                            <p class="mb-3"><strong>Precio:</strong> S/. ${(product.base_price || 0).toFixed(2)}</p>
-                            <button class="btn btn-sm btn-warning" onclick="editProduct(${product.id})">Editar</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">Eliminar</button>
+                            <p class="mb-2"><strong>Categoría:</strong> ${product.categoria_nombre || 'N/A'}</p>
+                            <p class="mb-3"><strong>Precio:</strong> S/. ${(product.precio || 0).toFixed(2)}</p>
+                            <button class="btn btn-sm btn-warning" onclick="editProduct('${product.producto_id}')">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.producto_id}')">Eliminar</button>
                         </div>
                     </div>
                 </div>
@@ -503,18 +505,13 @@
         // Mostrar detalles del pedido
         async function showOrderDetail(orderId) {
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
+                console.log('📋 Obteniendo detalles del pedido:', orderId);
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                const response = await fetch('/api/orders/' + orderId, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!response.ok) throw new Error('Error al cargar detalles');
-                
-                const data = await response.json();
-                const order = data.order || data;
+                const order = await api.getOrderById(orderId);
+                if (!order) throw new Error('Pedido no encontrado');
+
                 const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
                 
                 // Renderizar detalles
@@ -522,34 +519,36 @@
                 let html = `
                     <div class="mb-3">
                         <h6 class="text-primary">📋 Información del Pedido</h6>
-                        <p class="mb-1"><strong>Cliente:</strong> ${order.cliente_nombres || 'N/A'}</p>
-                        <p class="mb-1"><strong>Teléfono:</strong> ${order.cliente_telefono || 'N/A'}</p>
-                        <p class="mb-3"><strong>Estado:</strong> <span class="badge ${getStatusBadgeClass(order.status)}">${order.status}</span></p>
+                        <p class="mb-1"><strong>Número:</strong> #${order.numero_pedido || order.id?.substring(0, 8) || 'N/A'}</p>
+                        <p class="mb-1"><strong>Restaurante:</strong> ${order.tb_restaurantes?.restaurante_nombre || 'N/A'}</p>
+                        <p class="mb-1"><strong>Cliente:</strong> ${order.nombre_cliente || 'N/A'}</p>
+                        <p class="mb-1"><strong>Teléfono:</strong> ${order.telefono_cliente || 'N/A'}</p>
+                        <p class="mb-3"><strong>Estado:</strong> <span class="badge ${getStatusBadgeClass(order.estado)}">${order.estado}</span></p>
                     </div>
                     
                     <div class="mb-3">
                         <h6 class="text-primary">🏠 Entrega</h6>
-                        <p class="mb-1"><strong>Dirección:</strong> ${order.delivery_address || 'N/A'}</p>
-                        <p class="mb-1"><strong>Distrito:</strong> ${order.district || 'N/A'}</p>
-                        ${order.referencia_entrega ? `<p class="mb-1"><strong>Referencia:</strong> ${order.referencia_entrega}</p>` : ''}
-                        ${order.nota_repartidor ? `<p class="mb-3"><strong>Nota:</strong> <em>"${order.nota_repartidor}"</em></p>` : ''}
+                        <p class="mb-1"><strong>Dirección:</strong> ${order.direccion_entrega || 'N/A'}</p>
+                        <p class="mb-1"><strong>Distrito:</strong> ${order.distrito || 'N/A'}</p>
+                        ${order.referencia ? `<p class="mb-1"><strong>Referencia:</strong> ${order.referencia}</p>` : ''}
+                        ${order.notas_entrega ? `<p class="mb-3"><strong>Nota:</strong> <em>"${order.notas_entrega}"</em></p>` : ''}
                     </div>
                     
                     <div class="mb-3">
                         <h6 class="text-primary">📦 Items</h6>
                         <div class="list-group">`;
                 
-                // Agregar items
-                if (order.items && Array.isArray(order.items)) {
-                    order.items.forEach(item => {
+                // Agregar items de la relación tb_pedido_detalles
+                if (order.tb_pedido_detalles && Array.isArray(order.tb_pedido_detalles)) {
+                    order.tb_pedido_detalles.forEach(item => {
                         html += `
                             <div class="list-group-item">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h6 class="mb-0">${item.name}</h6>
-                                        <small class="text-muted">${item.quantity}x ${item.description || ''}</small>
+                                        <h6 class="mb-0">${item.nombre_producto || 'Producto'}</h6>
+                                        <small class="text-muted">${item.cantidad}x</small>
                                     </div>
-                                    <span class="fw-bold">S/. ${(item.price * item.quantity).toFixed(2)}</span>
+                                    <span class="fw-bold">S/. ${(item.precio_unitario * item.cantidad).toFixed(2)}</span>
                                 </div>
                             </div>`;
                     });
@@ -563,23 +562,23 @@
                 const footer = document.getElementById('orderDetailFooter');
                 footer.innerHTML = '';
 
-                // ✅ FIXED: Cambié 'pendiente' por 'recibido' (lo que envía el backend)
-                if (order.status === 'recibido') {
+                // ✅ Estados según la BD: recibido → aceptado → preparando → listo
+                if (order.estado === 'recibido') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-success" onclick="updateOrderStatus(${orderId}, 'aceptado')">
+                        <button type="button" class="btn btn-success" onclick="updateOrderStatus('${orderId}', 'aceptado')">
                             ✅ Aceptar Pedido
                         </button>
-                        <button type="button" class="btn btn-danger" onclick="updateOrderStatus(${orderId}, 'cancelado')">
+                        <button type="button" class="btn btn-danger" onclick="updateOrderStatus('${orderId}', 'cancelado')">
                             ❌ Rechazar
                         </button>`;
-                } else if (order.status === 'aceptado') {
+                } else if (order.estado === 'aceptado') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-warning" onclick="updateOrderStatus(${orderId}, 'preparando')">
+                        <button type="button" class="btn btn-warning" onclick="updateOrderStatus('${orderId}', 'preparando')">
                             👨‍🍳 Marcar Preparando
                         </button>`;
-                } else if (order.status === 'preparando') {
+                } else if (order.estado === 'preparando') {
                     footer.innerHTML += `
-                        <button type="button" class="btn btn-info" onclick="updateOrderStatus(${orderId}, 'listo')">
+                        <button type="button" class="btn btn-info" onclick="updateOrderStatus('${orderId}', 'listo')">
                             ✨ Marcar Listo para Entrega
                         </button>`;
                 }
@@ -598,24 +597,12 @@
             if (!confirm(`¿Cambiar estado a "${newStatus}"?`)) return;
 
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
+                console.log('📝 Actualizando estado:', { orderId, newStatus });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                console.log('📝 Actualizando estado:', { orderId, newStatus, token: token.substring(0, 20) + '...' });
-
-                const response = await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ estado: newStatus })
-                });
-
-                const data = await response.json();
-                console.log('📥 Respuesta:', data);
-
-                if (!response.ok) throw new Error(data.error || 'Error al actualizar');
+                const result = await api.updateOrderStatus(orderId, newStatus);
+                console.log('📥 Respuesta:', result);
 
                 showAlert(`✅ Pedido actualizado a: ${newStatus}`, 'success');
                 bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
@@ -628,46 +615,130 @@
             }
         }
 
-        function showAlert(message, type) {
-            const alertContainer = document.getElementById('alertContainer');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            alertContainer.appendChild(alertDiv);
+        async function cargarCategorias() {
+            try {
+                console.log('📂 Cargando categorías...');
+                const api = window.rapiRushAPI;
+                if (!api) return;
 
-            setTimeout(() => alertDiv.remove(), 5000);
-        }
+                const categories = await api.getCategories();
+                console.log('✅ Categorías cargadas:', categories);
 
-        function logout() {
-            if (confirm('¿Cerrar sesión?')) {
-                sessionStorage.clear();
-                localStorage.removeItem('user_email');
-                window.location.href = '../auth/login.html';
+                const select = document.getElementById('productCategory');
+                const existingOptions = select.querySelectorAll('option[value=""]');
+                
+                // Limpiar opciones excepto la primera (vacía)
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+
+                // Agregar nuevas opciones
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.categoria_id;
+                    option.textContent = cat.nombre;
+                    select.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('❌ Error cargando categorías:', error);
             }
         }
 
-        // Cargar pedidos y productos al iniciar
-        loadOrders();
-        loadProducts();
-        cargarPerfilRestaurante(); // ← Cargar perfil también
+        function showAlert(message, type) {
+            window.globalShowAlert(message, type, 5000);
+        }
 
-        // ✅ FUNCIONES PARA PERFIL
-        async function cargarPerfilRestaurante() {
+        function logout() {
+            console.log('🔒 Logout clickeado en restaurante.html');
+            if (confirm('¿Cerrar sesión?')) {
+                // ✅ Usar authManager para logout correcto
+                if (window.authManager) {
+                    window.authManager.logout();
+                } else {
+                    // Fallback si authManager no está disponible
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '../auth/login.html';
+                }
+            }
+        }
+
+        // ✅ FUNCIÓN PARA ACTUALIZAR EL BADGE DE ESTADO
+        function actualizarBadgeEstado() {
+            const badge = document.getElementById('estadoBadge');
+            if (currentEstado) {
+                badge.style.backgroundColor = '#10B981'; // Verde
+                badge.style.color = 'white';
+                badge.textContent = '🟢 ABIERTO';
+            } else {
+                badge.style.backgroundColor = '#EF4444'; // Rojo
+                badge.style.color = 'white';
+                badge.textContent = '🔴 CERRADO';
+            }
+        }
+
+        // ✅ FUNCIÓN PARA TOGGLE DE ESTADO
+        async function toggleEstado(event) {
+            event?.preventDefault?.();
+            
             try {
                 const token = localStorage.getItem('supabaseAuthToken');
                 if (!token) throw new Error('No autenticado');
 
-                const response = await fetch(`http://localhost:3000/api/restaurants/${restauranteId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                // Alternar el estado
+                const newEstado = !currentEstado;
+
+                console.log(`🔄 Cambiando estado restaurante a: ${newEstado ? 'ABIERTO' : 'CERRADO'}`);
+
+                // Enviar al backend
+                const response = await fetch('http://localhost:3000/api/restaurants/estado', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ es_abierto: newEstado })
                 });
 
-                if (!response.ok) throw new Error('Error al cargar perfil');
-
                 const data = await response.json();
-                const restaurante = data.restaurant || data.data;
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al actualizar estado');
+                }
+
+                // Actualizar estado global y UI
+                currentEstado = newEstado;
+                actualizarBadgeEstado();
+
+                showAlert(
+                    `✅ Restaurante ahora está: ${newEstado ? 'ABIERTO ✓' : 'CERRADO ✗'}`,
+                    newEstado ? 'success' : 'warning'
+                );
+
+                console.log('✅ Estado actualizado:', newEstado);
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error actualizando estado: ' + error.message, 'danger');
+            }
+        }
+
+        function abrirModalPerfil() {
+            cargarPerfilRestaurante(); // Cargar datos actuales
+            const modal = new bootstrap.Modal(document.getElementById('perfilModal'));
+            modal.show();
+        }
+
+        // ✅ FUNCIONES PARA PERFIL
+        async function cargarPerfilRestaurante() {
+            try {
+                console.log('📋 Cargando perfil del restaurante...', { restauranteId });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
+                const restaurante = await api.getRestaurantById(restauranteId);
+                if (!restaurante) throw new Error('Restaurante no encontrado');
 
                 // Llenar formulario
                 document.getElementById('perfilNombre').value = restaurante.nombre || '';
@@ -675,6 +746,10 @@
                 document.getElementById('perfilImagen').value = restaurante.image_url || '';
                 document.getElementById('perfilDireccion').value = restaurante.direccion || '';
                 document.getElementById('perfilTelefono').value = restaurante.telefono || '';
+
+                // Cargar estado (abierto/cerrado)
+                currentEstado = restaurante.es_abierto === true || restaurante.es_abierto === 1;
+                actualizarBadgeEstado();
 
                 // Mostrar preview de imagen
                 if (restaurante.image_url) {
@@ -702,11 +777,14 @@
             };
 
             try {
+                console.log('📝 Actualizando perfil:', { restauranteId, ...perfilData });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
                 const token = localStorage.getItem('supabaseAuthToken');
                 if (!token) throw new Error('No autenticado');
 
-                console.log('📝 Actualizando perfil:', perfilData);
-
+                // Hacer request directo ya que no existe método en API
                 const response = await fetch(`http://localhost:3000/api/restaurants/${restauranteId}`, {
                     method: 'PUT',
                     headers: {
@@ -750,6 +828,7 @@
 
         // ✅ FUNCIONES PARA PRODUCTOS
         function showAddProductForm() {
+            cargarCategorias(); // Cargar categorías cuando se abre el modal
             const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
             modal.show();
         }
@@ -758,25 +837,26 @@
 
         async function editProduct(productId) {
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
+                console.log('📦 Cargando producto para editar:', productId);
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                // Cargar categorías primero
+                await cargarCategorias();
 
-                if (!response.ok) throw new Error('Error al cargar producto');
-
-                const data = await response.json();
-                const product = data.product || data.data;
+                // Obtener producto directamente de la API
+                const response = await api.request(`/products/${productId}`);
+                const product = response.product || response.data;
+                
+                if (!product) throw new Error('Producto no encontrado');
 
                 // Llenar modal con datos del producto
                 currentProductId = productId;
-                document.getElementById('productName').value = product.nombre;
+                document.getElementById('productName').value = product.nombre || '';
                 document.getElementById('productDesc').value = product.descripcion || '';
-                document.getElementById('productCategory').value = product.categoria;
-                document.getElementById('productPrice').value = product.base_price;
-                document.getElementById('productImage').value = product.image_url || '';
+                document.getElementById('productCategory').value = product.categoria_id || '';
+                document.getElementById('productPrice').value = product.precio || '';
+                document.getElementById('productImage').value = product.imagen_url || '';
 
                 // Cambiar título del modal
                 const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
@@ -797,23 +877,15 @@
             if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
 
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
-
                 console.log('🗑️ Eliminando producto:', productId);
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                const data = await response.json();
-                console.log('📥 Respuesta:', data);
-
-                if (!response.ok) throw new Error(data.error || 'Error al eliminar producto');
+                const result = await api.deleteProduct(productId);
+                console.log('📥 Respuesta:', result);
 
                 showAlert('✅ Producto eliminado exitosamente', 'success');
-                loadProducts(); // Recargar lista
+                await loadProducts(); // Recargar lista
 
             } catch (error) {
                 console.error('❌ Error:', error);
@@ -827,14 +899,35 @@
             loadProducts();
         }, 10000);
 
+        // 📸 Actualizar preview de imagen del producto
+        function updateProductPreview() {
+            const imageUrl = document.getElementById('productImage').value.trim();
+            const preview = document.getElementById('productImagePreview');
+            const placeholder = document.getElementById('previewPlaceholder');
+            
+            if (imageUrl) {
+                preview.src = imageUrl;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                preview.onerror = function() {
+                    preview.style.display = 'none';
+                    placeholder.style.display = 'block';
+                    placeholder.innerHTML = '<p style="color: #dc3545; font-size: 0.9rem;">❌ No se pudo cargar la imagen</p>';
+                };
+            } else {
+                preview.style.display = 'none';
+                placeholder.style.display = 'block';
+                placeholder.innerHTML = '<i class="bi bi-image" style="font-size: 3rem; opacity: 0.3;"></i><p style="margin-top: 10px; font-size: 0.9rem;">La imagen aparecerá aquí</p>';
+            }
+        }
+
         async function submitAddProduct() {
             const producto = {
                 nombre: document.getElementById('productName').value.trim(),
                 descripcion: document.getElementById('productDesc').value.trim(),
-                categoria: document.getElementById('productCategory').value,
-                base_price: parseFloat(document.getElementById('productPrice').value),
-                image_url: document.getElementById('productImage').value.trim(),
-                sizes: [] // Por ahora sin tamaños
+                categoria_id: document.getElementById('productCategory').value,
+                precio: parseFloat(document.getElementById('productPrice').value),
+                imagen_url: document.getElementById('productImage').value.trim()
             };
 
             if (!producto.nombre || !producto.categoria || !producto.base_price) {
@@ -843,38 +936,23 @@
             }
 
             try {
-                const token = localStorage.getItem('supabaseAuthToken');
-                if (!token) throw new Error('No autenticado');
+                console.log('📦 Guardando producto:', { currentProductId, ...producto });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
 
-                let response, url, method;
+                let result;
 
                 // ✅ Si estamos editando
                 if (currentProductId) {
-                    url = `http://localhost:3000/api/products/${currentProductId}`;
-                    method = 'PUT';
                     console.log('📝 Actualizando producto:', producto);
+                    result = await api.updateProduct(currentProductId, producto);
                 } else {
                     // ✅ Si es nuevo
-                    url = 'http://localhost:3000/api/products/create';
-                    method = 'POST';
                     console.log('📤 Creando nuevo producto:', producto);
+                    result = await api.createProduct(producto);
                 }
 
-                response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(producto)
-                });
-
-                const data = await response.json();
-                console.log('📥 Respuesta:', data);
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Error al guardar producto');
-                }
+                console.log('📥 Respuesta:', result);
 
                 showAlert(currentProductId ? '✅ Producto actualizado' : '✅ Producto creado', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
@@ -886,7 +964,7 @@
                 const submitBtn = document.querySelector('#addProductForm button[type="submit"]');
                 if (submitBtn) submitBtn.textContent = '➕ Agregar Producto';
 
-                loadProducts(); // Recargar lista
+                await loadProducts(); // Recargar lista
 
             } catch (error) {
                 console.error('❌ Error:', error);

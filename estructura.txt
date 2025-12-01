@@ -1,6 +1,9 @@
 RapiRush/
 │
 ├── client/                                   # ⭐ FRONTEND (HTML, CSS, JS)
+│   ├── api/
+│   │    ├── cache.js
+│   │    └── rapiRushAPI.js           # 🔥 Único archivo que llama al backend
 │   ├── index.html
 │   ├── restaurantes.html
 │   ├── carrito.html
@@ -23,8 +26,6 @@ RapiRush/
 │       ├── css/
 │       │   └── styles.css
 │       ├── js/
-│       │   ├── api/
-│       │   │   └── rapiRushAPI.js           # 🔥 Único archivo que llama al backend
 │       │   ├── admin.js
 │       │   ├── agregarestaurante.js
 │       │   ├── authManager.js
@@ -57,7 +58,6 @@ RapiRush/
 │      │      
 │      ├── middleware/
 │      │   ├── authMiddleware.js    # Valida JWT de Supabase Y # Validación de roles
-│      │    verifyEmail.js
 │      │
 │      ├── routes/
 │          ├── authRoutes.js        # Rutas de login/registro
@@ -67,6 +67,12 @@ RapiRush/
 │      
 │
 └── README.md                                 # Documentación general del proyecto
+
+
+
+
+**BASE DE DATOS: SUPABASE
+
 
 CLIENTE CREA PEDIDO
     ↓

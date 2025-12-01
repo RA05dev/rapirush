@@ -1,7 +1,9 @@
 // ==============================
 // cliente.js – Panel del cliente (CORREGIDO)
 // ==============================
-document.addEventListener('DOMContentLoaded', async function() {
+
+// ✅ FUNCIÓN PRINCIPAL QUE SE EJECUTA CUANDO EL DOM ESTÁ LISTO
+async function initDashboard() {
   console.log('🚀 Iniciando dashboard cliente...');
   
   // ✅ ESPERAR a que authManager esté listo
@@ -10,16 +12,32 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('✅ authManager está listo');
   }
   
-  console.log('📦 authManager:', !!window.authManager);
-  console.log('🔍 isLoggedIn():', window.authManager?.isLoggedIn());
-  console.log('👤 currentUser:', window.authManager?.getCurrentUser());
+  console.log('📦 Verificación de estado:');
+  console.log('   - authManager existe:', !!window.authManager);
+  console.log('   - isLoggedIn():', window.authManager?.isLoggedIn());
+  console.log('   - currentUser:', window.authManager?.getCurrentUser());
+  console.log('   - localStorage.currentUser:', localStorage.getItem('currentUser')?.substring(0, 50) + '...');
+  console.log('   - localStorage.supabaseAuthToken:', !!localStorage.getItem('supabaseAuthToken'));
   
   // ✅ USAR authManager en lugar de sessionStorage viejo
   if (!window.authManager || !authManager.isLoggedIn()) {
     console.log('❌ No hay sesión en authManager, redirigiendo...');
     console.log('💾 localStorage.currentUser:', localStorage.getItem('currentUser'));
     console.log('💾 localStorage.token:', localStorage.getItem('supabaseAuthToken')?.substring(0, 20) + '...');
-    window.location.href = '../auth/login.html';
+    
+  // ✅ MEJORA: Verificación más detallada
+  setTimeout(() => {
+    if (!window.authManager || !authManager.isLoggedIn()) {
+      console.log('🔴 Confirmado: Sin sesión válida. Redirigiendo a login.');
+      console.log('📊 Estado final:', {
+        authManager: !!window.authManager,
+        isLoggedIn: window.authManager?.isLoggedIn?.(),
+        currentUser: window.authManager?.getCurrentUser?.(),
+        token: localStorage.getItem('supabaseAuthToken')?.substring(0, 10) + '...'
+      });
+      window.location.href = '../auth/login.html';
+    }
+  }, 500);
     return;
   }
 
@@ -36,11 +54,45 @@ document.addEventListener('DOMContentLoaded', async function() {
   console.log('✅ Sesión válida, mostrando dashboard cliente');
 
   // ✅ INICIALIZAR INTERFAZ
+  console.log('🎨 ANTES de initializeUI');
   initializeUI(user);
+  console.log('🎨 DESPUÉS de initializeUI');
+  
   initializeCart();
-  loadOrders(user);
-  computeStats(user);
-});
+  console.log('🎨 DESPUÉS de initializeCart');
+  
+  // ✅ CRÍTICO: Esperar a que rapiRushAPI esté configurado con token
+  console.log('🔐 Esperando a que rapiRushAPI esté configurado...');
+  await new Promise(resolve => {
+    const checkInterval = setInterval(() => {
+      if (window.rapiRushAPI && window.rapiRushAPI.token) {
+        console.log('✅ Token configurado en rapiRushAPI, longitud:', window.rapiRushAPI.token.length);
+        clearInterval(checkInterval);
+        resolve();
+      }
+    }, 50);
+    // Timeout después de 3 segundos
+    setTimeout(() => {
+      clearInterval(checkInterval);
+      console.warn('⚠️ Timeout esperando token, continuando de todas formas');
+      resolve();
+    }, 3000);
+  });
+  
+  console.log('🎨 ANTES de loadOrders');
+  await loadOrders(user);
+  console.log('🎨 DESPUÉS de loadOrders');
+  
+  computeStats(currentUserOrders);
+}
+
+// ✅ EJECUTAR CUANDO EL DOCUMENTO ESTÉ LISTO
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDashboard);
+} else {
+  // El documento ya está listo, ejecutar inmediatamente
+  initDashboard();
+}
 
 // ==============================
 // 🔹 INICIALIZAR INTERFAZ
@@ -59,13 +111,8 @@ function initializeUI(user) {
   document.getElementById('profilePhone').value = user.phone || '';
 
   // Configurar logout
-  const logoutBtn = document.getElementById('btnLogout');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      handleLogout();
-    });
-  }
+  // ✅ NOTA: El logout ahora se maneja via onclick en el HTML
+  console.log('✅ Cliente.js inicializado - logout disponible via onclick');
 
   // Configurar guardar perfil
   const saveProfileBtn = document.getElementById('btnSaveProfile');
@@ -141,52 +188,97 @@ function initializeCart() {
 let currentUserOrders = [];  // ← Variable global para guardar pedidos
 async function loadOrders(user) {
   console.log('📦 Cargando pedidos...');
+  console.log('🔍 window.rapiRushAPI existe?', !!window.rapiRushAPI);
+  console.log('🔍 getMyOrders existe?', typeof window.rapiRushAPI?.getMyOrders);
+  console.log('🔐 Token en rapiRushAPI?', !!window.rapiRushAPI?.token);
+  console.log('🔐 Token válido?', window.rapiRushAPI?.token?.substring(0, 20) + '...');
   
-  const ACTIVE_STATES = ['recibido', 'preparando', 'camino', 'listo', 'camino', 'llegado'];
+  const ACTIVE_STATES = ['recibido', 'preparando', 'camino', 'listo', 'llegado'];
   
   let orders = [];
 
   try {
     // ✅ INTENTAR OBTENER DE LA BASE DE DATOS PRIMERO
     console.log('🔄 Intentando obtener pedidos de la base de datos...');
+    
+    if (!window.rapiRushAPI) {
+      throw new Error('rapiRushAPI no está disponible');
+    }
+    
+    if (typeof window.rapiRushAPI.getMyOrders !== 'function') {
+      throw new Error('rapiRushAPI.getMyOrders no es una función');
+    }
+    
+    if (!window.rapiRushAPI.token) {
+      throw new Error('⚠️ CRÍTICO: Token no configurado en rapiRushAPI');
+    }
+    
+    console.log('📤 Llamando a getMyOrders con token:', window.rapiRushAPI.token.substring(0, 20) + '...');
     const result = await window.rapiRushAPI.getMyOrders();
     
-    if (result && result.orders) {
+    console.log('📊 Resultado completo del API:', JSON.stringify(result, null, 2));
+    console.log('📊 result.orders es:', result?.orders);
+    console.log('📊 ¿Es array?', Array.isArray(result?.orders));
+    console.log('📊 Longitud:', result?.orders?.length);
+    
+    if (!result.success) {
+      console.warn('⚠️ API retornó success=false:', result.error);
+    }
+    
+    if (result && result.orders && Array.isArray(result.orders)) {
       orders = result.orders.map(dbOrder => ({
-        id: dbOrder.id,
-        numero: `#${dbOrder.id.toString().slice(-6)}`,
-        date: dbOrder.creado_en,
+        id: dbOrder.pedido_id,
+        numero: dbOrder.numero_pedido,
+        date: dbOrder.fecha_creacion,
         // ✅ MAPEAR ITEMS CORRECTAMENTE DEL BACKEND
-        items: (dbOrder.pedido_detalle || []).map(item => ({
-          name: item.nombre_item,
+        items: (dbOrder.tb_pedido_detalles || []).map(item => ({
+          name: item.nombre_producto,
           quantity: item.cantidad,
-          price: item.precio,
+          price: item.precio_unitario,
           description: item.descripcion || '',
-          note: item.nota_producto || ''
+          note: item.notas_adicionales || ''
         })),
         subtotal: dbOrder.subtotal,
-        delivery: dbOrder.delivery_fee,
-        discount: dbOrder.descuento,
+        delivery: dbOrder.costo_envio,
+        discount: 0,  // No hay campo descuento en BD, pero puede agregarse después
         total: dbOrder.total,
         status: dbOrder.estado,
-        email: dbOrder.cliente_email,
-        name: dbOrder.cliente_nombre,
+        name: dbOrder.nombre_cliente,
+        phone: dbOrder.telefono_cliente,
         deliveryAddress: dbOrder.direccion_entrega,
-        district: dbOrder.distrito_entrega,
-        deliveryNote: dbOrder.nota_repartidor,
-        paymentMethod: dbOrder.metodo_pago
+        district: dbOrder.distrito,
+        reference: dbOrder.referencia,
+        paymentMethod: dbOrder.metodo_pago,
+        notes: dbOrder.notas_entrega,
+        restaurante_nombre: dbOrder.tb_restaurantes?.restaurante_nombre,
+        restaurant: dbOrder.tb_restaurantes?.restaurante_nombre
       }));
       console.log(`✅ ${orders.length} pedidos obtenidos de la base de datos`);
+      if (orders.length > 0) {
+        console.log('📊 Primer pedido mapeado:', orders[0]);
+      }
+      console.log('📊 Todos los pedidos:', JSON.stringify(orders, null, 2));
+    } else {
+      console.warn('⚠️ result.orders no existe, está vacío o no es un array');
+      console.log('📊 Estructura de result:', Object.keys(result));
     }
   } catch (error) {
-    console.warn('⚠️ Error obteniendo pedidos de BD, usando localStorage:', error);
+    console.error('❌ ERROR CRÍTICO obteniendo pedidos de BD:', error);
+    console.error('💥 Stack:', error.stack);
+    
     // ✅ FALLBACK A LOCALSTORAGE
+    console.warn('⚠️ Usando localStorage como fallback...');
     orders = window.Session && window.Session.getOrders ? 
       window.Session.getOrders(user.email) : [];
   }
 
   const activosContainer = document.getElementById('pedidosActivosList');
   const historialContainer = document.getElementById('historialPedidosList');
+  
+  if (!activosContainer || !historialContainer) {
+    console.error('❌ Contenedores no encontrados en el DOM');
+    return;
+  }
   
   activosContainer.innerHTML = '';
   historialContainer.innerHTML = '';
@@ -205,6 +297,8 @@ async function loadOrders(user) {
   orders.forEach(function(order) {
     renderOrderItem(order, activosContainer, historialContainer, ACTIVE_STATES);
   });
+  
+  computeStats(currentUserOrders);  // ← Actualizar estadísticas después de cargar
 }
 
 
@@ -218,6 +312,7 @@ function showOrderDetails(order) {
   let html = `
     <div class="mb-4">
       <h5 class="fw-bold">Pedido #${order.id.substring(0, 8)}</h5>
+      <p class="mb-1"><strong>🍽️ Restaurante:</strong> ${order.restaurante_nombre || order.restaurant || 'N/A'}</p>
       <p class="mb-1"><strong>Fecha:</strong> ${new Date(order.date).toLocaleString()}</p>
       <p class="mb-1"><strong>Total:</strong> S/. ${order.total?.toFixed?.(2) || '0.00'}</p>
       <p class="mb-0"><strong>Estado:</strong> <span class="badge bg-primary">${order.status}</span></p>
@@ -338,7 +433,21 @@ function showTracking(order) {
     </div>`;
   
   // Timeline de seguimiento
-  const steps = order.tracking || getDefaultTrackingSteps(order);
+  let steps = [];
+  
+  // ✅ SI HAY TRACKING DEL BACKEND, USAR ESE
+  if (order.tb_pedido_rastreo && Array.isArray(order.tb_pedido_rastreo) && order.tb_pedido_rastreo.length > 0) {
+    console.log('📊 Usando rastreo del backend:', order.tb_pedido_rastreo);
+    steps = order.tb_pedido_rastreo.map(rastreo => ({
+      step: rastreo.estado_nuevo,
+      description: `Cambio hecho por: ${rastreo.cambio_por}`,
+      observaciones: rastreo.observaciones,
+      time: rastreo.fecha_cambio
+    }));
+  } else {
+    // FALLBACK a pasos por defecto
+    steps = getDefaultTrackingSteps(order);
+  }
   
   if (String(order.status).toLowerCase() === 'entregado') {
     html += `<div class="alert alert-success text-center fw-bold mb-4">✅ Tu pedido fue entregado correctamente.</div>`;
@@ -349,9 +458,15 @@ function showTracking(order) {
   html += '<h6 class="fw-bold mb-3">📋 Seguimiento del Pedido</h6>';
   html += '<div class="timeline">';
   
+  const currentStatus = String(order.status || '').toLowerCase();
+  const statusOrder = ['recibido', 'aceptado', 'preparando', 'listo', 'camino', 'llegado', 'entregado'];
+  const currentIndex = statusOrder.indexOf(currentStatus);
+  
   steps.forEach((step, index) => {
-    const isCompleted = index <= steps.findIndex(s => s.step === order.status) || step.completed;
-    const isCurrent = step.step === order.status;
+    const stepStatus = String(step.step || '').toLowerCase();
+    const stepIndex = statusOrder.indexOf(stepStatus);
+    const isCompleted = stepIndex <= currentIndex && stepIndex !== -1;
+    const isCurrent = stepStatus === currentStatus;
     
     html += `
       <div class="d-flex align-items-start mb-3">
@@ -359,11 +474,12 @@ function showTracking(order) {
           <i class="bi ${isCompleted ? 'bi-check-circle-fill text-success' : (isCurrent ? 'bi-arrow-right-circle-fill text-warning' : 'bi-circle text-muted')} fs-5"></i>
         </div>
         <div class="flex-grow-1">
-          <div class="${isCompleted ? 'fw-bold' : (isCurrent ? 'fw-bold text-warning' : 'text-muted')}">
+          <div class="${isCompleted ? 'fw-bold text-success' : (isCurrent ? 'fw-bold text-warning' : 'text-muted')}">
             ${step.step}
             ${isCurrent ? ' <span class="badge bg-warning text-dark">Actual</span>' : ''}
           </div>
           <small class="text-muted d-block">${step.description || ''}</small>
+          ${step.observaciones ? `<small class="text-info d-block">📝 <strong>Nota del repartidor:</strong> ${step.observaciones}</small>` : ''}
           ${step.time ? `<small class="text-muted">${new Date(step.time).toLocaleString()}</small>` : ''}
         </div>
       </div>`;
@@ -378,22 +494,27 @@ function showTracking(order) {
 // 🔹 OBTENER ESTADOS DE SEGUIMIENTO POR DEFECTO
 // ==============================
 function getDefaultTrackingSteps(order) {
-  const baseSteps = [
-    { step: 'Pedido recibido', description: 'Hemos recibido tu pedido', time: order.date },
-    { step: 'Aceptado por el restaurante', description: 'Aceptado por el restaurante' },
-    { step: 'En preparación', description: 'En preparación' },
-    { step: 'En camino', description: 'En camino' },
-    { step: 'Pedido llegado al destino', description: 'Pedido llegado al destino' },
-    { step: 'Entregado', description: 'Entregado' }
+  const orderStatus = String(order.status || 'recibido').toLowerCase();
+  
+  const steps = [
+    { step: 'recibido', description: 'Hemos recibido tu pedido', time: order.date },
+    { step: 'aceptado', description: 'Aceptado por el restaurante' },
+    { step: 'preparando', description: 'En preparación' },
+    { step: 'listo', description: 'Listo para envío' },
+    { step: 'camino', description: 'En camino' },
+    { step: 'llegado', description: 'Pedido llegado al destino' },
+    { step: 'entregado', description: 'Entregado' }
   ];
   
-  return baseSteps;
+  return steps;
 }
 
 // ==============================
 // 🔹 RENDERIZAR ITEM DE PEDIDO - VERSIÓN MEJORADA
 // ==============================
 function renderOrderItem(order, activosContainer, historialContainer, ACTIVE_STATES) {
+  console.log('📦 Renderizando orden:', order);
+  
   const item = document.createElement('a');
   item.className = 'list-group-item list-group-item-action';
   item.href = '#';
@@ -568,4 +689,59 @@ async function confirmDelivery(orderId) {
     console.error('❌ Error confirmando entrega:', error);
     alert('Error al confirmar la entrega');
   }
+}
+
+// ==============================
+// 🔹 FILTRAR HISTORIAL POR ESTADO
+// ==============================
+function filtrarHistorial(status) {
+  console.log('🔍 Filtrando historial por estado:', status);
+  
+  const historialContainer = document.getElementById('historialPedidosList');
+  if (!historialContainer) {
+    console.error('❌ historialPedidosList no encontrado');
+    return;
+  }
+
+  // Actualizar botones activos
+  const buttons = document.querySelectorAll('.filtro-historial-btn');
+  buttons.forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Marcar botón activo
+  event.target?.classList?.add('active');
+
+  // Filtrar pedidos
+  let filteredOrders = currentUserOrders;
+  
+  if (status !== 'all') {
+    const statusMap = {
+      'delivered': ['entregado'],
+      'cancelled': ['cancelado', 'rechazado'],
+      'all': [] // Mostrar todos
+    };
+    
+    const targetStates = statusMap[status] || [];
+    
+    filteredOrders = currentUserOrders.filter(order => 
+      targetStates.includes(String(order.status || '').toLowerCase())
+    );
+  }
+
+  // Renderizar pedidos filtrados
+  historialContainer.innerHTML = '';
+  
+  if (filteredOrders.length === 0) {
+    historialContainer.innerHTML = '<div class="text-muted text-center py-3">No hay pedidos en esta categoría</div>';
+    return;
+  }
+
+  const ACTIVE_STATES = ['recibido', 'preparando', 'camino', 'listo', 'llegado'];
+  
+  filteredOrders.forEach(order => {
+    renderOrderItem(order, null, historialContainer, ACTIVE_STATES);
+  });
+  
+  console.log('✅ Mostrados', filteredOrders.length, 'pedidos');
 }

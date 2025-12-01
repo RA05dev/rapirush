@@ -1,39 +1,5 @@
 import { supabase } from '../config/supabaseClient.js';
 
-// ✅ FUNCIÓN PARA CONVERTIR ID NUMÉRICO A UUID
-function convertToUUID(restaurantId) {
-    // Si ya es un UUID, devolverlo tal cual
-    if (restaurantId.includes('-')) {
-        return restaurantId;
-    }
-    
-    // Si es numérico, convertirlo a UUID
-    const idNum = parseInt(restaurantId);
-    if (!isNaN(idNum)) {
-        // Mapeo basado en tu función getSimpleRestaurantId
-        const uuidMap = {
-            1: '10000000-0000-0000-0000-000000000001',
-            2: '20000000-0000-0000-0000-000000000002', 
-            3: '30000000-0000-0000-0000-000000000003',
-            4: '40000000-0000-0000-0000-000000000004',
-            5: '50000000-0000-0000-0000-000000000005',
-            6: '60000000-0000-0000-0000-000000000006',
-            7: '70000000-0000-0000-0000-000000000007',
-            8: '80000000-0000-0000-0000-000000000008', 
-            9: '90000000-0000-0000-0000-000000000009',
-            10: 'a0000000-0000-0000-0000-000000000010',
-            11: 'b0000000-0000-0000-0000-000000000011',
-            12: 'c0000000-0000-0000-0000-000000000012',
-            13: 'd0000000-0000-0000-0000-000000000013',
-            14: 'e0000000-0000-0000-0000-000000000014',
-            15: 'f0000000-0000-0000-0000-000000000015'
-        };
-        return uuidMap[idNum] || restaurantId;
-    }
-    
-    return restaurantId;
-}
-
 export const restaurantController = {
   // ✅ OBTENER TODOS LOS RESTAURANTES (OPTIMIZADO CON PAGINACIÓN)
   async getAllRestaurants(req, res) {
@@ -47,9 +13,9 @@ export const restaurantController = {
 
       // ✅ OPTIMIZACIÓN: Seleccionar solo campos necesarios
       const { data, error, count } = await supabase
-        .from('restaurantes')
-        .select('id, nombre, descripcion, etiquetas, rating, reviews, tiempo_delivery, delivery_cost, direccion, abierto, image_url', { count: 'exact' })
-        .order('nombre')
+        .from('tb_restaurantes')
+        .select('restaurante_id, restaurante_nombre, restaurante_descripcion, restaurante_url, tipo_comida, tiempo_delivery, delivery_cost, calificacion_promedio, numero_reviews, restaurante_telefono, restaurante_direccion, es_abierto, fecha_creacion', { count: 'exact' })
+        .order('restaurante_nombre')
         .range(offset, offset + limit - 1);
 
       if (error) {
@@ -61,20 +27,21 @@ export const restaurantController = {
       }
 
       console.log(`📥 Restaurantes obtenidos: ${data?.length || 0} de ${count}`);
+      console.log('🔍 Datos crudos:', JSON.stringify(data?.slice(0, 2)));
       
       // Transformar datos para el frontend
       const restaurants = data.map(restaurant => ({
-        id: restaurant.id,
-        name: restaurant.nombre,
-        description: restaurant.descripcion || '',
-        categories: restaurant.etiquetas ? restaurant.etiquetas.split(',') : [],
-        rating: restaurant.rating || 4.5,
-        reviews: restaurant.reviews || 0,
-        deliveryTime: `${restaurant.tiempo_delivery || 30} min`,
-        deliveryCost: restaurant.delivery_cost || 2.50,
-        location: restaurant.direccion || 'Lima, Perú',
-        isOpen: restaurant.abierto !== false,
-        img: restaurant.image_url || 'assets/Img/basedatos.png'
+        id: restaurant.restaurante_id,
+        name: restaurant.restaurante_nombre,
+        description: restaurant.restaurante_descripcion || '',
+        img: restaurant.restaurante_url || 'assets/Img/basedatos.png',
+        tipo_comida: restaurant.tipo_comida || 'Comida',
+        rating: restaurant.calificacion_promedio || 4.5,
+        reviews: restaurant.numero_reviews || 0,
+        deliveryTime: restaurant.tiempo_delivery ? `${restaurant.tiempo_delivery} min` : '30-45 min',
+        deliveryCost: restaurant.delivery_cost || 5,
+        location: restaurant.restaurante_direccion || 'Lima, Perú',
+        isOpen: restaurant.es_abierto !== false
       }));
 
       res.json({
@@ -96,19 +63,16 @@ export const restaurantController = {
   },
 
   // ✅ OBTENER RESTAURANTE POR ID
-async getRestaurantById(req, res) {
+  async getRestaurantById(req, res) {
     try {
-        let restaurantId = req.params.id; // ✅ Usar let
+        const restaurantId = req.params.id;
         console.log(`📤 Obteniendo restaurante ID: ${restaurantId}`);
-
-        // ✅ CONVERTIR ID NUMÉRICO A UUID
-        restaurantId = convertToUUID(restaurantId);
-        console.log(`🔄 ID convertido: ${restaurantId}`);
-
+        
+        // ✅ USAR EL ID DIRECTAMENTE, SIN CONVERTIR
         const { data, error } = await supabase
-            .from('restaurantes')
+            .from('tb_restaurantes')
             .select('*')
-            .eq('id', restaurantId)
+            .eq('restaurante_id', restaurantId)
             .single();
 
         if (error) {
@@ -128,19 +92,20 @@ async getRestaurantById(req, res) {
 
         // Transformar datos (USANDO CAMPOS REALES)
         const restaurant = {
-            id: data.id,
-            name: data.nombre,
-            description: data.descripcion || '',
-            categories: data.etiquetas ? data.etiquetas.split(',') : [],
-            rating: data.rating || 4.5,
-            reviews: data.reviews || 0,
-            deliveryTime: `${data.tiempo_delivery || 30} min`,
-            deliveryCost: data.delivery_cost || 2.50,
-            location: data.direccion || 'Lima, Perú',
-            isOpen: data.abierto !== false,
-            img: data.image_url || 'assets/Img/basedatos.png',
-            telefono: data.telefono,
-            direccion: data.direccion
+            id: data.restaurante_id,
+            name: data.restaurante_nombre,
+            description: data.restaurante_descripcion || '',
+            img: data.restaurante_url || 'assets/Img/basedatos.png',
+            tipo_comida: data.tipo_comida || 'Comida',
+            rating: data.calificacion_promedio || 4.5,
+            reviews: data.numero_reviews || 0,
+            deliveryTime: data.tiempo_delivery ? `${data.tiempo_delivery} min` : '30-45 min',
+            deliveryCost: data.delivery_cost || 5,
+            location: data.restaurante_direccion || 'Lima, Perú',
+            isOpen: data.es_abierto !== false,
+            es_abierto: data.es_abierto,
+            telefono: data.restaurante_telefono,
+            direccion: data.restaurante_direccion
         };
 
         res.json({
@@ -155,7 +120,7 @@ async getRestaurantById(req, res) {
             error: 'Error interno del servidor'
         });
     }
-},
+  },
 
   // ✅ BUSCAR RESTAURANTES
   async searchRestaurants(req, res) {
@@ -164,19 +129,20 @@ async getRestaurantById(req, res) {
       console.log(`🔍 Buscando restaurantes - query: ${query}, category: ${category}`);
 
       let supabaseQuery = supabase
-        .from('restaurantes')  // ✅ CORREGIDO
+        .from('tb_restaurantes')
         .select('*');
 
       // Aplicar filtros
       if (query) {
-        supabaseQuery = supabaseQuery.or(`nombre.ilike.%${query}%,descripcion.ilike.%${query}%,etiquetas.ilike.%${query}%`);
+        supabaseQuery = supabaseQuery.or(`restaurante_nombre.ilike.%${query}%,restaurante_descripcion.ilike.%${query}%,tipo_comida.ilike.%${query}%`);
       }
 
+      // ✅ BUSCAR POR tipo_comida EN LUGAR DE categoria_id (que es UUID)
       if (category) {
-        supabaseQuery = supabaseQuery.ilike('etiquetas', `%${category}%`);
+        supabaseQuery = supabaseQuery.ilike('tipo_comida', `%${category}%`);
       }
 
-      const { data, error } = await supabaseQuery.order('nombre');
+      const { data, error } = await supabaseQuery.order('restaurante_nombre');
 
       if (error) {
         console.error('❌ Error en Supabase:', error);
@@ -188,17 +154,17 @@ async getRestaurantById(req, res) {
 
       // Transformar datos (USANDO CAMPOS REALES)
       const restaurants = data.map(restaurant => ({
-        id: restaurant.id,
-        name: restaurant.nombre,
-        description: restaurant.descripcion || '',
-        categories: restaurant.etiquetas ? restaurant.etiquetas.split(',') : [],
-        rating: restaurant.rating || 4.5,
-        reviews: restaurant.reviews || 0,
-        deliveryTime: `${restaurant.tiempo_delivery || 30} min`,
-        deliveryCost: restaurant.delivery_cost || 2.50,
-        location: restaurant.direccion || 'Lima, Perú',
-        isOpen: restaurant.abierto !== false,
-        img: restaurant.image_url || 'assets/Img/basedatos.png'
+        id: restaurant.restaurante_id,
+        name: restaurant.restaurante_nombre,
+        description: restaurant.restaurante_descripcion || '',
+        img: restaurant.restaurante_url || 'assets/Img/basedatos.png',
+        tipo_comida: restaurant.tipo_comida || 'Comida',
+        rating: restaurant.calificacion_promedio || 4.5,
+        reviews: restaurant.numero_reviews || 0,
+        deliveryTime: restaurant.tiempo_delivery ? `${restaurant.tiempo_delivery} min` : '30-45 min',
+        deliveryCost: restaurant.delivery_cost || 5,
+        location: restaurant.restaurante_direccion || 'Lima, Perú',
+        isOpen: restaurant.es_abierto !== false
       }));
 
       res.json({
@@ -220,16 +186,17 @@ async getRestaurantById(req, res) {
   async updateRestaurant(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const userId = req.user.usuario_id;
+      const restaurantId = id;
       const updates = req.body;
 
-      console.log(`📝 Actualizando restaurante ${id} por usuario ${userId}`);
+      console.log(`📝 Actualizando restaurante ${restaurantId} por usuario ${userId}`);
 
       // 1. Verificar que el restaurante existe y pertenece al usuario
       const { data: restaurant, error: fetchError } = await supabase
-        .from('restaurantes')
+        .from('tb_restaurantes')
         .select('*')
-        .eq('id', id)
+        .eq('restaurante_id', restaurantId)
         .single();
 
       if (fetchError || !restaurant) {
@@ -239,7 +206,7 @@ async getRestaurantById(req, res) {
         });
       }
 
-      // ✅ Verificar propiedad: comparar usuario_id con el usuario autenticado
+      // ✅ CORRECCIÓN: Verificar propiedad usando usuario_id
       if (restaurant.usuario_id !== userId) {
         console.warn('❌ No autorizado: restaurante.usuario_id:', restaurant.usuario_id, 'userId:', userId);
         return res.status(403).json({
@@ -249,7 +216,7 @@ async getRestaurantById(req, res) {
       }
 
       // 2. Actualizar los campos permitidos
-      const allowedFields = ['nombre', 'descripcion', 'image_url', 'direccion', 'telefono', 'etiquetas', 'abierto'];
+      const allowedFields = ['restaurante_nombre', 'restaurante_descripcion', 'restaurante_direccion', 'restaurante_telefono', 'restaurante_url', 'tipo_comida', 'tiempo_delivery', 'delivery_cost', 'es_abierto'];
       const updateData = {};
       
       allowedFields.forEach(field => {
@@ -258,10 +225,13 @@ async getRestaurantById(req, res) {
         }
       });
 
+      // ✅ AGREGAR fecha_actualizacion automáticamente
+      updateData.fecha_actualizacion = new Date().toISOString();
+
       const { error: updateError } = await supabase
-        .from('restaurantes')
+        .from('tb_restaurantes')
         .update(updateData)
-        .eq('id', id);
+        .eq('restaurante_id', restaurantId);
 
       if (updateError) {
         return res.status(400).json({
@@ -270,13 +240,13 @@ async getRestaurantById(req, res) {
         });
       }
 
-      console.log(`✅ Restaurante ${id} actualizado`);
+      console.log(`✅ Restaurante ${restaurantId} actualizado`);
 
       res.json({
         success: true,
         message: 'Restaurante actualizado exitosamente',
         restaurant: {
-          id,
+          id: restaurantId,
           ...updateData
         }
       });
@@ -288,5 +258,76 @@ async getRestaurantById(req, res) {
         error: 'Error interno del servidor'
       });
     }
+  },
+
+  // ✅ ACTUALIZAR ESTADO DEL RESTAURANTE (ABIERTO/CERRADO)
+  async updateEstado(req, res) {
+    try {
+      const userId = req.user.usuario_id;
+      const { es_abierto } = req.body;
+
+      console.log(`🔄 Actualizando estado restaurante para usuario: ${userId}`);
+      console.log(`📊 Nuevo estado: ${es_abierto}`);
+
+      if (typeof es_abierto !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          error: 'es_abierto debe ser un valor booleano'
+        });
+      }
+
+      // 1. Obtener restaurante_id del usuario
+      const { data: restaurante, error: fetchError } = await supabase
+        .from('tb_restaurantes')
+        .select('restaurante_id, usuario_id, es_abierto')
+        .eq('usuario_id', userId)
+        .single();
+
+      if (fetchError || !restaurante) {
+        return res.status(404).json({
+          success: false,
+          error: 'Restaurante no encontrado'
+        });
+      }
+
+      // ✅ Verificar autorización
+      if (restaurante.usuario_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'No autorizado para actualizar este restaurante'
+        });
+      }
+
+      // 2. Actualizar estado
+      const { error: updateError } = await supabase
+        .from('tb_restaurantes')
+        .update({ 
+          es_abierto: es_abierto,
+          fecha_actualizacion: new Date().toISOString()
+        })
+        .eq('restaurante_id', restaurante.restaurante_id);
+
+      if (updateError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Error al actualizar estado: ' + updateError.message
+        });
+      }
+
+      console.log(`✅ Estado del restaurante ${restaurante.restaurante_id} actualizado a: ${es_abierto}`);
+
+      res.json({
+        success: true,
+        message: `Restaurante ahora está ${es_abierto ? 'ABIERTO' : 'CERRADO'}`,
+        es_abierto: es_abierto
+      });
+
+    } catch (error) {
+      console.error('💥 Error en updateEstado:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor'
+      });
+    }
   }
-};
+}
