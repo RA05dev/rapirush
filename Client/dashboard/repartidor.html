@@ -504,6 +504,7 @@
                 let html = `
                     <div class="mb-3">
                         <h6 class="text-primary">📋 Información del Pedido</h6>
+                        <p class="mb-1"><strong>Número:</strong> #${order.numero_pedido || order.pedido_id?.substring(0, 8) || 'N/A'}</p>
                         <p class="mb-1"><strong>Cliente:</strong> ${cliente?.cliente_nombre || 'N/A'}</p>
                         <p class="mb-1"><strong>Teléfono:</strong> ${cliente?.cliente_telefono || 'N/A'}</p>
                         <p class="mb-3"><strong>Estado:</strong> <span class="badge bg-info">${order.estado}</span></p>

@@ -118,7 +118,7 @@ export const createOrder = async (req, res) => {
         direccion_entrega: address,
         distrito: distrito || 'Lima',
         referencia: reference || '',
-        notas_adicionales: notes || '',
+        notas_entrega: notes || '',
         subtotal: parseFloat(subtotal) || 0,
         costo_envio: parseFloat(delivery) || 0,
         total: parseFloat(total),
@@ -227,6 +227,7 @@ export const getOrdersByUser = async (req, res) => {
       .select(`
         *,
         tb_pedido_detalles(*),
+        tb_pedido_rastreo(*),
         tb_restaurantes(
           restaurante_nombre,
           restaurante_telefono

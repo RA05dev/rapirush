@@ -1,6 +1,9 @@
 RapiRush/
 │
 ├── client/                                   # ⭐ FRONTEND (HTML, CSS, JS)
+│   ├── api/
+│   │    ├── cache.js
+│   │    └── rapiRushAPI.js           # 🔥 Único archivo que llama al backend
 │   ├── index.html
 │   ├── restaurantes.html
 │   ├── carrito.html
@@ -23,9 +26,6 @@ RapiRush/
 │       ├── css/
 │       │   └── styles.css
 │       ├── js/
-│       │   ├── api/
-│       │   │   └── cache.js
-│       │   │   └── rapiRushAPI.js           # 🔥 Único archivo que llama al backend
 │       │   ├── admin.js
 │       │   ├── agregarestaurante.js
 │       │   ├── authManager.js

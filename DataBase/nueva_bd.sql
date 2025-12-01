@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS tb_pedidos (
   direccion_entrega TEXT NOT NULL,
   distrito VARCHAR(100),
   referencia TEXT,
-  notas_adicionales TEXT,
+  notas_entrega TEXT,
   
   -- TOTALES
   subtotal DECIMAL(10, 2) DEFAULT 0,

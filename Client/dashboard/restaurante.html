@@ -140,11 +140,11 @@
                                     <i class="bi bi-plus-lg"></i> Agregar Producto
                                 </button>
                             </div>
-                            <div id="productosContainer" class="col-12">
-                                <div class="text-center text-muted py-5">
-                                    <i class="bi bi-inbox fs-1"></i>
-                                    <p>No hay productos cargados</p>
-                                </div>
+                        </div>
+                        <div class="row" id="productosContainer">
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p>No hay productos cargados</p>
                             </div>
                         </div>
                     </div>
@@ -180,31 +180,47 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addProductForm">
-                        <div class="mb-3">
-                            <label class="form-label">Nombre del Producto *</label>
-                            <input type="text" class="form-control" id="productName" required>
+                    <div class="row">
+                        <div class="col-md-7">
+                            <form id="addProductForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre del Producto *</label>
+                                    <input type="text" class="form-control" id="productName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción</label>
+                                    <textarea class="form-control" id="productDesc" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Categoría *</label>
+                                    <select class="form-control" id="productCategory" required>
+                                        <option value="">Selecciona una categoría</option>
+                                        <!-- Las opciones se cargarán con cargarCategorias() -->
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Precio Base *</label>
+                                    <input type="number" class="form-control" id="productPrice" step="0.01" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">URL de Imagen</label>
+                                    <input type="url" class="form-control" id="productImage" placeholder="https://ejemplo.com/imagen.jpg" oninput="updateProductPreview()">
+                                </div>
+                            </form>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control" id="productDesc" rows="3"></textarea>
+                        <div class="col-md-5">
+                            <div class="card bg-light h-100">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">📸 Vista Previa</h6>
+                                    <img id="productImagePreview" src="" alt="Preview" class="img-fluid rounded" style="max-height: 250px; display: none; margin-top: 10px;">
+                                    <div id="previewPlaceholder" class="text-muted" style="padding: 60px 20px;">
+                                        <i class="bi bi-image" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <p style="margin-top: 10px; font-size: 0.9rem;">La imagen aparecerá aquí</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Categoría *</label>
-                            <select class="form-control" id="productCategory" required>
-                                <option value="">Selecciona una categoría</option>
-                                <!-- Las opciones se cargarán con cargarCategorias() -->
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Precio Base *</label>
-                            <input type="number" class="form-control" id="productPrice" step="0.01" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">URL de Imagen</label>
-                            <input type="url" class="form-control" id="productImage" placeholder="https://ejemplo.com/imagen.jpg">
-                        </div>
-                    </form>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -501,6 +517,8 @@
                 let html = `
                     <div class="mb-3">
                         <h6 class="text-primary">📋 Información del Pedido</h6>
+                        <p class="mb-1"><strong>Número:</strong> #${order.numero_pedido || order.id?.substring(0, 8) || 'N/A'}</p>
+                        <p class="mb-1"><strong>Restaurante:</strong> ${order.tb_restaurantes?.restaurante_nombre || 'N/A'}</p>
                         <p class="mb-1"><strong>Cliente:</strong> ${order.nombre_cliente || 'N/A'}</p>
                         <p class="mb-1"><strong>Teléfono:</strong> ${order.telefono_cliente || 'N/A'}</p>
                         <p class="mb-3"><strong>Estado:</strong> <span class="badge ${getStatusBadgeClass(order.estado)}">${order.estado}</span></p>
@@ -511,7 +529,7 @@
                         <p class="mb-1"><strong>Dirección:</strong> ${order.direccion_entrega || 'N/A'}</p>
                         <p class="mb-1"><strong>Distrito:</strong> ${order.distrito || 'N/A'}</p>
                         ${order.referencia ? `<p class="mb-1"><strong>Referencia:</strong> ${order.referencia}</p>` : ''}
-                        ${order.notas_adicionales ? `<p class="mb-3"><strong>Nota:</strong> <em>"${order.notas_adicionales}"</em></p>` : ''}
+                        ${order.notas_entrega ? `<p class="mb-3"><strong>Nota:</strong> <em>"${order.notas_entrega}"</em></p>` : ''}
                     </div>
                     
                     <div class="mb-3">
@@ -887,6 +905,28 @@
             loadOrders();
             loadProducts();
         }, 10000);
+
+        // 📸 Actualizar preview de imagen del producto
+        function updateProductPreview() {
+            const imageUrl = document.getElementById('productImage').value.trim();
+            const preview = document.getElementById('productImagePreview');
+            const placeholder = document.getElementById('previewPlaceholder');
+            
+            if (imageUrl) {
+                preview.src = imageUrl;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                preview.onerror = function() {
+                    preview.style.display = 'none';
+                    placeholder.style.display = 'block';
+                    placeholder.innerHTML = '<p style="color: #dc3545; font-size: 0.9rem;">❌ No se pudo cargar la imagen</p>';
+                };
+            } else {
+                preview.style.display = 'none';
+                placeholder.style.display = 'block';
+                placeholder.innerHTML = '<i class="bi bi-image" style="font-size: 3rem; opacity: 0.3;"></i><p style="margin-top: 10px; font-size: 0.9rem;">La imagen aparecerá aquí</p>';
+            }
+        }
 
         async function submitAddProduct() {
             const producto = {

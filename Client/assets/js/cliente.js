@@ -249,7 +249,8 @@ async function loadOrders(user) {
         district: dbOrder.distrito,
         reference: dbOrder.referencia,
         paymentMethod: dbOrder.metodo_pago,
-        notes: dbOrder.notas_adicionales,
+        notes: dbOrder.notas_entrega,
+        restaurante_nombre: dbOrder.tb_restaurantes?.restaurante_nombre,
         restaurant: dbOrder.tb_restaurantes?.restaurante_nombre
       }));
       console.log(`✅ ${orders.length} pedidos obtenidos de la base de datos`);
@@ -311,6 +312,7 @@ function showOrderDetails(order) {
   let html = `
     <div class="mb-4">
       <h5 class="fw-bold">Pedido #${order.id.substring(0, 8)}</h5>
+      <p class="mb-1"><strong>🍽️ Restaurante:</strong> ${order.restaurante_nombre || order.restaurant || 'N/A'}</p>
       <p class="mb-1"><strong>Fecha:</strong> ${new Date(order.date).toLocaleString()}</p>
       <p class="mb-1"><strong>Total:</strong> S/. ${order.total?.toFixed?.(2) || '0.00'}</p>
       <p class="mb-0"><strong>Estado:</strong> <span class="badge bg-primary">${order.status}</span></p>
@@ -431,7 +433,21 @@ function showTracking(order) {
     </div>`;
   
   // Timeline de seguimiento
-  const steps = order.tracking || getDefaultTrackingSteps(order);
+  let steps = [];
+  
+  // ✅ SI HAY TRACKING DEL BACKEND, USAR ESE
+  if (order.tb_pedido_rastreo && Array.isArray(order.tb_pedido_rastreo) && order.tb_pedido_rastreo.length > 0) {
+    console.log('📊 Usando rastreo del backend:', order.tb_pedido_rastreo);
+    steps = order.tb_pedido_rastreo.map(rastreo => ({
+      step: rastreo.estado_nuevo,
+      description: `Cambio hecho por: ${rastreo.cambio_por}`,
+      observaciones: rastreo.observaciones,
+      time: rastreo.fecha_cambio
+    }));
+  } else {
+    // FALLBACK a pasos por defecto
+    steps = getDefaultTrackingSteps(order);
+  }
   
   if (String(order.status).toLowerCase() === 'entregado') {
     html += `<div class="alert alert-success text-center fw-bold mb-4">✅ Tu pedido fue entregado correctamente.</div>`;
@@ -463,6 +479,7 @@ function showTracking(order) {
             ${isCurrent ? ' <span class="badge bg-warning text-dark">Actual</span>' : ''}
           </div>
           <small class="text-muted d-block">${step.description || ''}</small>
+          ${step.observaciones ? `<small class="text-info d-block">📝 <strong>Nota del repartidor:</strong> ${step.observaciones}</small>` : ''}
           ${step.time ? `<small class="text-muted">${new Date(step.time).toLocaleString()}</small>` : ''}
         </div>
       </div>`;
