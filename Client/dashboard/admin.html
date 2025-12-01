@@ -285,13 +285,16 @@
                 <div class="section-header">
                     <h2>Reportes de Desempeño</h2>
                     <div class="report-filters">
+                        <label for="reportType" class="visually-hidden">Tipo de reporte</label>
                         <select id="reportType">
                             <option value="sales">Ventas</option>
                             <option value="orders">Pedidos</option>
                             <option value="restaurants">Restaurantes</option>
                             <option value="delivery">Repartidores</option>
                         </select>
+                        <label for="dateFrom" class="visually-hidden">Fecha desde</label>
                         <input type="date" id="dateFrom" value="2024-01-01">
+                        <label for="dateTo" class="visually-hidden">Fecha hasta</label>
                         <input type="date" id="dateTo" value="2024-01-31">
                         <button class="btn btn-primary" onclick="generateReport()">Generar Reporte</button>
                     </div>
