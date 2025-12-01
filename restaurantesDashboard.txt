@@ -1,0 +1,557 @@
+    <script>
+        // Variables globales
+        let restauranteOrders = [];
+        let restauranteId;
+        let restauranteName;
+        let userRole;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('📋 restaurante.html - DOMContentLoaded iniciado');
+            console.log('⏱️ Timestamp:', new Date().toISOString());
+            
+            try {
+                // ✅ ESPERAR a que authManager esté listo
+                if (window.authManager && typeof window.authManager.isReady === 'function') {
+                    await window.authManager.isReady();
+                    console.log('✅ authManager está listo');
+                }
+                
+                // ✅ Obtener usuario del authManager o API
+                let currentUser = window.authManager?.getCurrentUser();
+                console.log('🔍 currentUser desde authManager:', currentUser);
+                
+                // ✅ Si no tenemos usuario, obtenerlo del API
+                if (!currentUser) {
+                    console.log('📤 Obteniendo usuario desde API...');
+                    const api = window.rapiRushAPI;
+                    if (api) {
+                        const response = await api.getCurrentUser();
+                        currentUser = response?.user || response;
+                        console.log('✅ Usuario obtenido del API:', currentUser);
+                    }
+                }
+                
+                // Extraer datos del usuario autenticado
+                restauranteId = currentUser?.restaurante_id;
+                restauranteName = currentUser?.restaurante_nombre || currentUser?.nombre || 'Restaurante';
+                userRole = currentUser?.rol;
+
+                console.log('📍 Valores obtenidos:', {
+                    restauranteId,
+                    restauranteName,
+                    userRole
+                });
+
+                // Verificar autenticación
+                if (!restauranteId || userRole !== 'restaurante') {
+                    console.error('❌ Autenticación fallida. No hay restaurante_id válido.');
+                    console.error('Detalles:', {
+                        currentUser,
+                        userRole_value: userRole,
+                        expected_role: 'restaurante'
+                    });
+                    setTimeout(() => {
+                        window.location.href = '../auth/login.html';
+                    }, 1000);
+                    return;
+                }
+
+                console.log('✅ Autenticación verificada. Restaurante ID:', restauranteId);
+                document.getElementById('userName').textContent = restauranteName || 'Restaurante';
+
+                // Cargar datos del restaurante
+                await loadOrders();
+                await loadProducts();
+                await cargarPerfilRestaurante();
+            } catch (error) {
+                console.error('❌ Error en inicialización:', error);
+                showAlert('Error de autenticación. Redirigiendo...', 'danger');
+                setTimeout(() => {
+                    window.location.href = '../auth/login.html';
+                }, 2000);
+            }
+        });
+
+        // Cargar pedidos del restaurante
+
+        async function loadOrders() {
+        try {
+            console.log('📋 Iniciando loadOrders...');
+            const api = window.rapiRushAPI;
+            if (!api) throw new Error('API no disponible');
+
+            const orders = await api.getRestaurantOrders();
+            restauranteOrders = orders || [];
+            console.log('📦 Pedidos del restaurante:', restauranteOrders);
+            console.log('📊 Total de pedidos:', restauranteOrders.length);
+
+            renderOrders();
+        } catch (error) {
+            console.error('❌ Error:', error);
+            showAlert(error.message, 'danger');
+        }
+        }
+
+        // Renderizar pedidos por estado
+        function renderOrders() {
+            // ✅ FILTRAR por estado usando el campo correcto de la BD
+            const recibidos = restauranteOrders.filter(o => o.estado === 'recibido');
+            const aceptados = restauranteOrders.filter(o => o.estado === 'aceptado');
+            const preparando = restauranteOrders.filter(o => o.estado === 'preparando');
+            const listos = restauranteOrders.filter(o => o.estado === 'listo');
+
+            // Actualizar contadores
+            document.getElementById('recibidosCount').textContent = recibidos.length;
+            document.getElementById('aceptadosCount').textContent = aceptados.length;
+            document.getElementById('preparandoCount').textContent = preparando.length;
+            document.getElementById('listosCount').textContent = listos.length;
+
+            // Renderizar cada grupo - con estado correcto
+            renderOrderGroup('recibidosContainer', recibidos, 'recibido');
+            renderOrderGroup('aceptadosContainer', aceptados, 'aceptado');
+            renderOrderGroup('preparandoContainer', preparando, 'preparando');
+            renderOrderGroup('listosContainer', listos, 'listo');
+        }
+
+        function renderOrderGroup(containerId, orders, status) {
+            const container = document.getElementById(containerId);
+            
+            if (orders.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12 text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p>No hay pedidos en estado: ${status}</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = orders.map(order => `
+                <div class="col-md-6 mb-4">
+                    <div class="card border-left border-primary">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <strong>Pedido #${order.pedido_id.toString().slice(-6)}</strong>
+                                <span class="badge ${getStatusBadgeClass(order.estado)}">${order.estado}</span>
+                            </h6>
+                            <p class="mb-2"><strong>Cliente:</strong> ${order.nombre_cliente || 'N/A'}</p>
+                            <p class="mb-2"><strong>Dirección:</strong> ${order.direccion_entrega || 'N/A'}</p>
+                            <p class="mb-2"><strong>Total:</strong> S/. ${(order.total || 0).toFixed(2)}</p>
+                            <p class="mb-3"><strong>Items:</strong> ${(order.tb_pedido_detalles?.length || 0)} productos</p>
+                            <button class="btn btn-sm btn-info" onclick="showOrderDetail('${order.pedido_id}')">
+                                Ver Detalles
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusBadgeClass(estado) {
+            const classes = {
+                'recibido': 'bg-info text-white',
+                'aceptado': 'bg-success',
+                'preparando': 'bg-warning text-dark',
+                'listo': 'bg-danger'
+            };
+            return classes[estado] || 'bg-secondary';
+        }
+
+        // ✅ CARGAR PRODUCTOS DEL RESTAURANTE
+        async function loadProducts() {
+            try {
+                console.log('📦 Cargando productos...', { restauranteId });
+                const api = window.rapiRushAPI;
+                if (!api) return;
+
+                const products = await api.getRestaurantProducts(restauranteId);
+                console.log('📦 Productos del restaurante:', products);
+                
+                renderProducts(products);
+            } catch (error) {
+                console.error('❌ Error cargando productos:', error);
+            }
+        }
+
+        // ✅ RENDERIZAR PRODUCTOS
+        function renderProducts(products) {
+            restauranteProducts = products; // Guardar en variable global
+            const container = document.getElementById('productosContainer');
+            
+            if (!products || products.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12 text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p>No hay productos registrados</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = products.map(product => `
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${product.nombre}</h5>
+                            <p class="card-text text-muted small">${product.descripcion || 'Sin descripción'}</p>
+                            <p class="mb-2"><strong>Categoría:</strong> ${product.categoria_nombre || 'N/A'}</p>
+                            <p class="mb-3"><strong>Precio:</strong> S/. ${(product.precio || 0).toFixed(2)}</p>
+                            <button class="btn btn-sm btn-warning" onclick="editProduct('${product.producto_id}')">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.producto_id}')">Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Mostrar detalles del pedido
+        async function showOrderDetail(orderId) {
+            try {
+                console.log('📋 Obteniendo detalles del pedido:', orderId);
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
+                const order = await api.getOrderById(orderId);
+                if (!order) throw new Error('Pedido no encontrado');
+
+                const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+                
+                // Renderizar detalles
+                const detailBody = document.getElementById('orderDetailBody');
+                let html = `
+                    <div class="mb-3">
+                        <h6 class="text-primary">📋 Información del Pedido</h6>
+                        <p class="mb-1"><strong>Cliente:</strong> ${order.nombre_cliente || 'N/A'}</p>
+                        <p class="mb-1"><strong>Teléfono:</strong> ${order.telefono_cliente || 'N/A'}</p>
+                        <p class="mb-3"><strong>Estado:</strong> <span class="badge ${getStatusBadgeClass(order.estado)}">${order.estado}</span></p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-primary">🏠 Entrega</h6>
+                        <p class="mb-1"><strong>Dirección:</strong> ${order.direccion_entrega || 'N/A'}</p>
+                        <p class="mb-1"><strong>Distrito:</strong> ${order.distrito || 'N/A'}</p>
+                        ${order.referencia ? `<p class="mb-1"><strong>Referencia:</strong> ${order.referencia}</p>` : ''}
+                        ${order.notas_adicionales ? `<p class="mb-3"><strong>Nota:</strong> <em>"${order.notas_adicionales}"</em></p>` : ''}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-primary">📦 Items</h6>
+                        <div class="list-group">`;
+                
+                // Agregar items de la relación tb_pedido_detalles
+                if (order.tb_pedido_detalles && Array.isArray(order.tb_pedido_detalles)) {
+                    order.tb_pedido_detalles.forEach(item => {
+                        html += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-0">${item.nombre_producto || 'Producto'}</h6>
+                                        <small class="text-muted">${item.cantidad}x</small>
+                                    </div>
+                                    <span class="fw-bold">S/. ${(item.precio_unitario * item.cantidad).toFixed(2)}</span>
+                                </div>
+                            </div>`;
+                    });
+                }
+                
+                html += `</div></div><div class="mb-3"><strong>Total:</strong> S/. ${(order.total || 0).toFixed(2)}</div>`;
+                
+                detailBody.innerHTML = html;
+
+                // Renderizar botones de acción
+                const footer = document.getElementById('orderDetailFooter');
+                footer.innerHTML = '';
+
+                // ✅ Estados según la BD: recibido → aceptado → preparando → listo
+                if (order.estado === 'recibido') {
+                    footer.innerHTML += `
+                        <button type="button" class="btn btn-success" onclick="updateOrderStatus('${orderId}', 'aceptado')">
+                            ✅ Aceptar Pedido
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="updateOrderStatus('${orderId}', 'cancelado')">
+                            ❌ Rechazar
+                        </button>`;
+                } else if (order.estado === 'aceptado') {
+                    footer.innerHTML += `
+                        <button type="button" class="btn btn-warning" onclick="updateOrderStatus('${orderId}', 'preparando')">
+                            👨‍🍳 Marcar Preparando
+                        </button>`;
+                } else if (order.estado === 'preparando') {
+                    footer.innerHTML += `
+                        <button type="button" class="btn btn-info" onclick="updateOrderStatus('${orderId}', 'listo')">
+                            ✨ Marcar Listo para Entrega
+                        </button>`;
+                }
+
+                footer.innerHTML += `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>`;
+
+                modal.show();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        // Actualizar estado del pedido
+        async function updateOrderStatus(orderId, newStatus) {
+            if (!confirm(`¿Cambiar estado a "${newStatus}"?`)) return;
+
+            try {
+                console.log('📝 Actualizando estado:', { orderId, newStatus });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
+                const result = await api.updateOrderStatus(orderId, newStatus);
+                console.log('📥 Respuesta:', result);
+
+                showAlert(`✅ Pedido actualizado a: ${newStatus}`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+                
+                // Recargar pedidos
+                await loadOrders();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alertDiv);
+
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        function logout() {
+            if (confirm('¿Cerrar sesión?')) {
+                // Limpiar todo el storage
+                localStorage.clear();
+                sessionStorage.clear();
+                // Limpiar también el token de Supabase
+                const supabaseKey = Object.keys(localStorage).find(k => k.includes('sb-'));
+                if (supabaseKey) localStorage.removeItem(supabaseKey);
+                // Redirigir a login
+                window.location.href = '../auth/login.html';
+            }
+        }
+
+        // ✅ FUNCIONES PARA PERFIL
+        async function cargarPerfilRestaurante() {
+            try {
+                console.log('📋 Cargando perfil del restaurante...', { restauranteId });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
+                const restaurante = await api.getRestaurantById(restauranteId);
+                if (!restaurante) throw new Error('Restaurante no encontrado');
+
+                // Llenar formulario
+                document.getElementById('perfilNombre').value = restaurante.nombre || '';
+                document.getElementById('perfilDescripcion').value = restaurante.descripcion || '';
+                document.getElementById('perfilImagen').value = restaurante.image_url || '';
+                document.getElementById('perfilDireccion').value = restaurante.direccion || '';
+                document.getElementById('perfilTelefono').value = restaurante.telefono || '';
+
+                // Mostrar preview de imagen
+                if (restaurante.image_url) {
+                    const previewImg = document.getElementById('previewImagen');
+                    previewImg.src = restaurante.image_url;
+                    previewImg.style.display = 'block';
+                }
+
+                console.log('✅ Perfil cargado:', restaurante);
+            } catch (error) {
+                console.error('❌ Error cargando perfil:', error);
+                showAlert('Error: ' + error.message, 'warning');
+            }
+        }
+
+        async function guardarPerfilRestaurante(event) {
+            event.preventDefault();
+
+            const perfilData = {
+                nombre: document.getElementById('perfilNombre').value.trim(),
+                descripcion: document.getElementById('perfilDescripcion').value.trim(),
+                image_url: document.getElementById('perfilImagen').value.trim(),
+                direccion: document.getElementById('perfilDireccion').value.trim(),
+                telefono: document.getElementById('perfilTelefono').value.trim()
+            };
+
+            try {
+                console.log('📝 Actualizando perfil:', { restauranteId, ...perfilData });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                // Hacer request directo ya que no existe método en API
+                const response = await fetch(`http://localhost:3000/api/restaurants/${restauranteId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(perfilData)
+                });
+
+                const data = await response.json();
+                console.log('📥 Respuesta:', data);
+
+                if (!response.ok) throw new Error(data.error || 'Error al actualizar perfil');
+
+                showAlert('✅ Perfil actualizado exitosamente', 'success');
+
+                // Actualizar nombre en navbar
+                if (perfilData.nombre) {
+                    document.getElementById('userName').textContent = perfilData.nombre;
+                }
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        // Preview de imagen
+        document.getElementById('perfilImagen')?.addEventListener('change', function() {
+            const url = this.value.trim();
+            if (url) {
+                const previewImg = document.getElementById('previewImagen');
+                previewImg.src = url;
+                previewImg.style.display = 'block';
+                previewImg.onerror = function() {
+                    showAlert('⚠️ URL de imagen no válida', 'warning');
+                    this.style.display = 'none';
+                };
+            }
+        });
+
+        // ✅ FUNCIONES PARA PRODUCTOS
+        function showAddProductForm() {
+            const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
+            modal.show();
+        }
+
+        let currentProductId = null; // Para editar
+        let restauranteProducts = []; // Guardar productos aquí
+
+        async function editProduct(productId) {
+            try {
+                console.log('📦 Cargando producto para editar:', productId);
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
+                // Buscar producto en la lista cargada
+                const product = restauranteProducts.find(p => p.producto_id === productId);
+                
+                if (!product) throw new Error('Producto no encontrado');
+
+                // Llenar modal con datos del producto
+                currentProductId = productId;
+                document.getElementById('productName').value = product.nombre || '';
+                document.getElementById('productDesc').value = product.descripcion || '';
+                document.getElementById('productCategory').value = product.categoria_nombre || '';
+                document.getElementById('productPrice').value = product.precio || '';
+                document.getElementById('productImage').value = product.imagen_url || '';
+
+                // Cambiar título del modal
+                const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
+                document.querySelector('#addProductModal .modal-title').textContent = '✏️ Editar Producto';
+                
+                // Cambiar botón de submit
+                const submitBtn = document.querySelector('#addProductForm button[type="submit"]');
+                if (submitBtn) submitBtn.textContent = '💾 Guardar Cambios';
+
+                modal.show();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        async function deleteProduct(productId) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+
+            try {
+                console.log('🗑️ Eliminando producto:', productId);
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
+                const result = await api.deleteProduct(productId);
+                console.log('📥 Respuesta:', result);
+
+                showAlert('✅ Producto eliminado exitosamente', 'success');
+                
+                // Quitar del array local
+                restauranteProducts = restauranteProducts.filter(p => p.producto_id !== productId);
+                await loadProducts(); // Recargar lista
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+
+        // Recargar cada 10 segundos
+        setInterval(() => {
+            loadOrders();
+            loadProducts();
+        }, 10000);
+
+        async function submitAddProduct() {
+            const producto = {
+                nombre: document.getElementById('productName').value.trim(),
+                descripcion: document.getElementById('productDesc').value.trim(),
+                categoria: document.getElementById('productCategory').value,
+                base_price: parseFloat(document.getElementById('productPrice').value),
+                image_url: document.getElementById('productImage').value.trim(),
+                sizes: [] // Por ahora sin tamaños
+            };
+
+            if (!producto.nombre || !producto.categoria || !producto.base_price) {
+                showAlert('Por favor completa los campos obligatorios (*)', 'danger');
+                return;
+            }
+
+            try {
+                console.log('📦 Guardando producto:', { currentProductId, ...producto });
+                const api = window.rapiRushAPI;
+                if (!api) throw new Error('API no disponible');
+
+                let result;
+
+                // ✅ Si estamos editando
+                if (currentProductId) {
+                    console.log('📝 Actualizando producto:', producto);
+                    result = await api.updateProduct(currentProductId, producto);
+                } else {
+                    // ✅ Si es nuevo
+                    console.log('📤 Creando nuevo producto:', producto);
+                    result = await api.createProduct(producto);
+                }
+
+                console.log('📥 Respuesta:', result);
+
+                showAlert(currentProductId ? '✅ Producto actualizado' : '✅ Producto creado', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
+                document.getElementById('addProductForm').reset();
+
+                // Reset modal
+                currentProductId = null;
+                document.querySelector('#addProductModal .modal-title').textContent = '➕ Agregar Producto';
+                const submitBtn = document.querySelector('#addProductForm button[type="submit"]');
+                if (submitBtn) submitBtn.textContent = '➕ Agregar Producto';
+
+                await loadProducts(); // Recargar lista
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error: ' + error.message, 'danger');
+            }
+        }
+    </script>

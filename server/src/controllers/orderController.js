@@ -444,11 +444,19 @@ export const getOrdersByRepartidor = async (req, res) => {
 
     const repartidorId = repartidor.repartidor_id;
 
-    // ✅ Obtener pedidos asignados al repartidor Y pedidos disponibles
-    const { data: assignedOrders, error: assignedError } = await supabase
+    // ✅ Obtener TODOS los pedidos relevantes en una sola query con OR
+    // Retorna: pedidos sin asignar en estado 'listo' + pedidos asignados a este repartidor en estados de entrega
+    const { data: allOrders, error: queryError } = await supabase
       .from('tb_pedidos')
       .select(`
-        *,
+        pedido_id,
+        estado,
+        total,
+        fecha_creacion,
+        repartidor_id,
+        restaurante_id,
+        cliente_id,
+        direccion_entrega,
         tb_pedido_detalles(*),
         tb_restaurantes(
           restaurante_nombre,
@@ -460,44 +468,22 @@ export const getOrdersByRepartidor = async (req, res) => {
           cliente_telefono
         )
       `)
-      .eq('repartidor_id', repartidorId)
-      .in('estado', ['camino', 'llegado', 'entregado'])
+      .or(`and(repartidor_id.is.null,estado.eq.listo),and(repartidor_id.eq.${repartidorId},estado.in.(camino,llegado,entregado))`)
       .order('fecha_creacion', { ascending: false });
 
-    // ✅ Obtener pedidos disponibles (sin repartidor asignado)
-    const { data: availableOrders, error: availableError } = await supabase
-      .from('tb_pedidos')
-      .select(`
-        *,
-        tb_pedido_detalles(*),
-        tb_restaurantes(
-          restaurante_nombre,
-          restaurante_direccion
-        ),
-        tb_clientes(
-          cliente_nombre,
-          cliente_apellido,
-          cliente_telefono
-        )
-      `)
-      .is('repartidor_id', null)
-      .eq('estado', 'listo')
-      .order('fecha_creacion', { ascending: false });
-
-    if (assignedError || availableError) {
-      console.error('❌ Error obteniendo pedidos:', assignedError || availableError);
+    if (queryError) {
+      console.error('❌ Error obteniendo pedidos:', queryError);
       return res.status(500).json({
         success: false,
         error: 'Error obteniendo pedidos'
       });
     }
 
-    console.log(`✅ Encontrados ${assignedOrders?.length || 0} pedidos asignados y ${availableOrders?.length || 0} disponibles`);
+    console.log(`✅ Encontrados ${allOrders?.length || 0} pedidos relevantes para repartidor ${repartidorId}`);
 
     res.json({
       success: true,
-      assignedOrders: assignedOrders || [],
-      availableOrders: availableOrders || []
+      data: allOrders || []
     });
 
   } catch (error) {

@@ -349,14 +349,14 @@
                 console.log('✅ Autenticación verificada. Restaurante ID:', restauranteId);
                 document.getElementById('userName').textContent = restauranteName || 'Restaurante';
 
-                // Cargar datos del restaurante
+                // ✅ Cargar datos del restaurante DENTRO del setTimeout después de asignar restauranteId
                 loadOrders();
+                loadProducts();
+                cargarPerfilRestaurante();
             }, 500); // 500ms de delay para sincronización completa
         });
 
         // Cargar pedidos del restaurante
-
-        async function loadOrders() {
         try {
             console.log('📋 Iniciando loadOrders...');
             const api = window.rapiRushAPI;
@@ -371,7 +371,6 @@
         } catch (error) {
             console.error('❌ Error:', error);
             showAlert(error.message, 'danger');
-        }
         }
 
         // Renderizar pedidos por estado
@@ -608,17 +607,19 @@
         }
 
         function logout() {
+            console.log('🔒 Logout clickeado en restaurante.html');
             if (confirm('¿Cerrar sesión?')) {
-                sessionStorage.clear();
-                localStorage.removeItem('user_email');
-                window.location.href = '../auth/login.html';
+                // ✅ Usar authManager para logout correcto
+                if (window.authManager) {
+                    window.authManager.logout();
+                } else {
+                    // Fallback si authManager no está disponible
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '../auth/login.html';
+                }
             }
         }
-
-        // Cargar pedidos y productos al iniciar
-        loadOrders();
-        loadProducts();
-        cargarPerfilRestaurante(); // ← Cargar perfil también
 
         // ✅ FUNCIONES PARA PERFIL
         async function cargarPerfilRestaurante() {
