@@ -444,9 +444,8 @@ export const getOrdersByRepartidor = async (req, res) => {
 
     const repartidorId = repartidor.repartidor_id;
 
-    // ✅ Obtener TODOS los pedidos relevantes en una sola query con OR
-    // Retorna: pedidos sin asignar en estado 'listo' + pedidos asignados a este repartidor en estados de entrega
-    const { data: allOrders, error: queryError } = await supabase
+    // ✅ Query 1: Obtener pedidos disponibles (sin asignar, estado 'listo')
+    const { data: availableOrders, error: availableError } = await supabase
       .from('tb_pedidos')
       .select(`
         pedido_id,
@@ -468,22 +467,61 @@ export const getOrdersByRepartidor = async (req, res) => {
           cliente_telefono
         )
       `)
-      .or(`and(repartidor_id.is.null,estado.eq.listo),and(repartidor_id.eq.${repartidorId},estado.in.(camino,llegado,entregado))`)
+      .is('repartidor_id', null)
+      .eq('estado', 'listo')
       .order('fecha_creacion', { ascending: false });
 
-    if (queryError) {
-      console.error('❌ Error obteniendo pedidos:', queryError);
+    if (availableError) {
+      console.error('❌ Error obteniendo pedidos disponibles:', availableError);
       return res.status(500).json({
         success: false,
-        error: 'Error obteniendo pedidos'
+        error: 'Error obteniendo pedidos disponibles'
       });
     }
 
-    console.log(`✅ Encontrados ${allOrders?.length || 0} pedidos relevantes para repartidor ${repartidorId}`);
+    // ✅ Query 2: Obtener pedidos asignados a este repartidor (en estados de entrega)
+    const { data: assignedOrders, error: assignedError } = await supabase
+      .from('tb_pedidos')
+      .select(`
+        pedido_id,
+        estado,
+        total,
+        fecha_creacion,
+        repartidor_id,
+        restaurante_id,
+        cliente_id,
+        direccion_entrega,
+        tb_pedido_detalles(*),
+        tb_restaurantes(
+          restaurante_nombre,
+          restaurante_direccion
+        ),
+        tb_clientes(
+          cliente_nombre,
+          cliente_apellido,
+          cliente_telefono
+        )
+      `)
+      .eq('repartidor_id', repartidorId)
+      .in('estado', ['camino', 'llegado', 'entregado'])
+      .order('fecha_creacion', { ascending: false });
+
+    if (assignedError) {
+      console.error('❌ Error obteniendo pedidos asignados:', assignedError);
+      return res.status(500).json({
+        success: false,
+        error: 'Error obteniendo pedidos asignados'
+      });
+    }
+
+    // ✅ Combinar ambos arrays
+    const allOrders = [...(availableOrders || []), ...(assignedOrders || [])];
+
+    console.log(`✅ Encontrados ${availableOrders?.length || 0} disponibles + ${assignedOrders?.length || 0} asignados = ${allOrders.length} total para repartidor ${repartidorId}`);
 
     res.json({
       success: true,
-      data: allOrders || []
+      data: allOrders
     });
 
   } catch (error) {
