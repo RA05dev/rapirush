@@ -5,6 +5,7 @@ import { authMiddleware, verifyRestaurantOwner } from '../middleware/authMiddlew
 const router = express.Router();
 
 // ✅ RUTAS PÚBLICAS
+router.get('/categories', productController.getCategories);
 router.get('/restaurant/:restaurantId', productController.getProductsByRestaurant);
 
 // ✅ RUTA PARA QUERY PARAMETERS

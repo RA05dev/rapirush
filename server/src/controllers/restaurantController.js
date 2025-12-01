@@ -103,6 +103,7 @@ export const restaurantController = {
             deliveryCost: data.delivery_cost || 5,
             location: data.restaurante_direccion || 'Lima, Perú',
             isOpen: data.es_abierto !== false,
+            es_abierto: data.es_abierto,
             telefono: data.restaurante_telefono,
             direccion: data.restaurante_direccion
         };
@@ -257,5 +258,76 @@ export const restaurantController = {
         error: 'Error interno del servidor'
       });
     }
+  },
+
+  // ✅ ACTUALIZAR ESTADO DEL RESTAURANTE (ABIERTO/CERRADO)
+  async updateEstado(req, res) {
+    try {
+      const userId = req.user.usuario_id;
+      const { es_abierto } = req.body;
+
+      console.log(`🔄 Actualizando estado restaurante para usuario: ${userId}`);
+      console.log(`📊 Nuevo estado: ${es_abierto}`);
+
+      if (typeof es_abierto !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          error: 'es_abierto debe ser un valor booleano'
+        });
+      }
+
+      // 1. Obtener restaurante_id del usuario
+      const { data: restaurante, error: fetchError } = await supabase
+        .from('tb_restaurantes')
+        .select('restaurante_id, usuario_id, es_abierto')
+        .eq('usuario_id', userId)
+        .single();
+
+      if (fetchError || !restaurante) {
+        return res.status(404).json({
+          success: false,
+          error: 'Restaurante no encontrado'
+        });
+      }
+
+      // ✅ Verificar autorización
+      if (restaurante.usuario_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'No autorizado para actualizar este restaurante'
+        });
+      }
+
+      // 2. Actualizar estado
+      const { error: updateError } = await supabase
+        .from('tb_restaurantes')
+        .update({ 
+          es_abierto: es_abierto,
+          fecha_actualizacion: new Date().toISOString()
+        })
+        .eq('restaurante_id', restaurante.restaurante_id);
+
+      if (updateError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Error al actualizar estado: ' + updateError.message
+        });
+      }
+
+      console.log(`✅ Estado del restaurante ${restaurante.restaurante_id} actualizado a: ${es_abierto}`);
+
+      res.json({
+        success: true,
+        message: `Restaurante ahora está ${es_abierto ? 'ABIERTO' : 'CERRADO'}`,
+        es_abierto: es_abierto
+      });
+
+    } catch (error) {
+      console.error('💥 Error en updateEstado:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor'
+      });
+    }
   }
-};
+}

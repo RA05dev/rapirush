@@ -175,6 +175,7 @@ export const getProductById = async (req, res) => {
                 descripcion: product.descripcion,
                 precio: parseFloat(product.precio),
                 imagen_url: product.imagen_url,
+                categoria_id: product.categoria_id,
                 es_disponible: product.es_disponible
             }
         });
@@ -723,6 +724,35 @@ export const deleteProductSize = async (req, res) => {
     }
 }
 
+// ✅ OBTENER TODAS LAS CATEGORÍAS
+export const getCategories = async (req, res) => {
+    try {
+        const { data: categories, error } = await supabase
+            .from('tb_categorias')
+            .select('categoria_id, nombre')
+            .order('nombre', { ascending: true });
+
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                error: 'Error al obtener categorías'
+            });
+        }
+
+        res.json({
+            success: true,
+            categories: categories || []
+        });
+
+    } catch (error) {
+        console.error('💥 Error en getCategories:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
 // ✅ EXPORTAR OBJETO CONTROLLER PARA COMPATIBILIDAD CON RUTAS
 export const productController = {
     getProductsByRestaurant,
@@ -733,5 +763,6 @@ export const productController = {
     getProductSizes,
     createProductSize,
     updateProductSize,
-    deleteProductSize
+    deleteProductSize,
+    getCategories
 };

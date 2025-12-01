@@ -22,8 +22,14 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item">
+                    <li class="nav-item mx-3">
                         <a class="nav-link" href="../index.html">Inicio</a>
+                    </li>
+                    <!-- Badge de Estado Abierto/Cerrado -->
+                    <li class="nav-item me-3">
+                        <button class="btn btn-sm" id="estadoBadge" style="background-color: #10B981; color: white; border: none; cursor: pointer;" onclick="toggleEstado(event)">
+                            🟢 <span id="estadoBadgeText">ABIERTO</span>
+                        </button>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -31,7 +37,15 @@
                             <span id="userName">Restaurante</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="abrirModalPerfil()">
+                                    <i class="bi bi-gear"></i> Mi Perfil
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">
+                                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                            </a></li>
                         </ul>
                     </li>
                 </ul>
@@ -73,11 +87,6 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="productos-tab" data-bs-toggle="tab" data-bs-target="#productos" type="button" role="tab">
                             📦 Mis Productos
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="perfil-tab" data-bs-toggle="tab" data-bs-target="#perfil" type="button" role="tab">
-                            ⚙️ Perfil
                         </button>
                     </li>
                 </ul>
@@ -139,62 +148,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Perfil -->
-                    <div class="tab-pane fade" id="perfil" role="tabpanel">
-                        <div class="row">
-                            <div class="col-lg-8 mx-auto">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5><i class="bi bi-pencil-square"></i> Editar Perfil del Restaurante</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <form id="perfilForm" onsubmit="guardarPerfilRestaurante(event)">
-                                            <div class="mb-3">
-                                                <label class="form-label">Nombre del Restaurante</label>
-                                                <input type="text" class="form-control" id="perfilNombre" required>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Descripción</label>
-                                                <textarea class="form-control" id="perfilDescripcion" rows="3"></textarea>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Foto del Restaurante (URL)</label>
-                                                <input type="url" class="form-control" id="perfilImagen">
-                                                <small class="text-muted">Puedes usar URLs de Unsplash o de otro servicio</small>
-                                            </div>
-
-                                            <div class="mb-3" id="previewImagenDiv">
-                                                <label class="form-label">Vista Previa</label>
-                                                <img id="previewImagen" src="" alt="Preview" class="img-fluid rounded" style="max-height: 200px; display: none;">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Dirección</label>
-                                                <input type="text" class="form-control" id="perfilDireccion">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Teléfono</label>
-                                                <input type="tel" class="form-control" id="perfilTelefono">
-                                            </div>
-
-                                            <div class="d-flex gap-2">
-                                                <button type="submit" class="btn btn-success">
-                                                    <i class="bi bi-check-lg"></i> Guardar Cambios
-                                                </button>
-                                                <button type="button" class="btn btn-secondary" onclick="cargarPerfilRestaurante()">
-                                                    <i class="bi bi-arrow-clockwise"></i> Recargar
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -240,18 +193,7 @@
                             <label class="form-label">Categoría *</label>
                             <select class="form-control" id="productCategory" required>
                                 <option value="">Selecciona una categoría</option>
-                                <option value="Pollo">Pollo</option>
-                                <option value="Pizzas">Pizzas</option>
-                                <option value="Hamburguesas">Hamburguesas</option>
-                                <option value="Sushi">Sushi</option>
-                                <option value="Pasteles">Pasteles</option> 
-                                <option value="Postres">Postres/option> 
-                                <option value="Mexicana">Mexicana</option>
-                                <option value="Italiana">Italiana</option>
-                                <option value="China">China</option>
-                                <option value="Bebidas">Bebidas</option>
-                                <option value="Complementos">Complementos</option>
-                                <option value="Mas">Otros</option>
+                                <!-- Las opciones se cargarán con cargarCategorias() -->
                             </select>
                         </div>
                         <div class="mb-3">
@@ -272,6 +214,63 @@
         </div>
     </div>
 
+    <!-- Modal Perfil Restaurante -->
+    <div class="modal fade" id="perfilModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-lines-fill"></i> Perfil del Restaurante
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="perfilForm" onsubmit="guardarPerfilRestaurante(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre del Restaurante</label>
+                            <input type="text" class="form-control" id="perfilNombre" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" id="perfilDescripcion" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Foto del Restaurante (URL)</label>
+                            <input type="url" class="form-control" id="perfilImagen">
+                            <small class="text-muted">Puedes usar URLs de Unsplash o de otro servicio</small>
+                        </div>
+
+                        <div class="mb-3" id="previewImagenDiv">
+                            <label class="form-label">Vista Previa</label>
+                            <img id="previewImagen" src="" alt="Preview" class="img-fluid rounded" style="max-height: 200px; display: none;">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="perfilDireccion">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="perfilTelefono">
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check2"></i> Guardar Cambios
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="cargarPerfilRestaurante()">
+                                <i class="bi bi-arrow-repeat"></i> Recargar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/api/rapiRushAPI.js"></script>
     <script src="../assets/js/api/cache.js"></script>
@@ -282,6 +281,7 @@
         let restauranteId;
         let restauranteName;
         let userRole;
+        let currentEstado = false; // Estado de abierto/cerrado
 
         // ✅ ESPERAR A QUE EL DOM ESTÉ LISTO ANTES DE VERIFICAR
         document.addEventListener('DOMContentLoaded', async function() {
@@ -474,10 +474,10 @@
                         <div class="card-body">
                             <h5 class="card-title">${product.nombre}</h5>
                             <p class="card-text text-muted small">${product.descripcion || 'Sin descripción'}</p>
-                            <p class="mb-2"><strong>Categoría:</strong> ${product.categoria || 'N/A'}</p>
-                            <p class="mb-3"><strong>Precio:</strong> S/. ${(product.base_price || 0).toFixed(2)}</p>
-                            <button class="btn btn-sm btn-warning" onclick="editProduct(${product.id})">Editar</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">Eliminar</button>
+                            <p class="mb-2"><strong>Categoría:</strong> ${product.categoria_nombre || 'N/A'}</p>
+                            <p class="mb-3"><strong>Precio:</strong> S/. ${(product.precio || 0).toFixed(2)}</p>
+                            <button class="btn btn-sm btn-warning" onclick="editProduct('${product.producto_id}')">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.producto_id}')">Eliminar</button>
                         </div>
                     </div>
                 </div>
@@ -595,6 +595,36 @@
             }
         }
 
+        async function cargarCategorias() {
+            try {
+                console.log('📂 Cargando categorías...');
+                const api = window.rapiRushAPI;
+                if (!api) return;
+
+                const categories = await api.getCategories();
+                console.log('✅ Categorías cargadas:', categories);
+
+                const select = document.getElementById('productCategory');
+                const existingOptions = select.querySelectorAll('option[value=""]');
+                
+                // Limpiar opciones excepto la primera (vacía)
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+
+                // Agregar nuevas opciones
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.categoria_id;
+                    option.textContent = cat.nombre;
+                    select.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('❌ Error cargando categorías:', error);
+            }
+        }
+
         function showAlert(message, type) {
             const alertContainer = document.getElementById('alertContainer');
             const alertDiv = document.createElement('div');
@@ -623,6 +653,72 @@
             }
         }
 
+        // ✅ FUNCIÓN PARA ACTUALIZAR EL BADGE DE ESTADO
+        function actualizarBadgeEstado() {
+            const badge = document.getElementById('estadoBadge');
+            if (currentEstado) {
+                badge.style.backgroundColor = '#10B981'; // Verde
+                badge.style.color = 'white';
+                badge.textContent = '🟢 ABIERTO';
+            } else {
+                badge.style.backgroundColor = '#EF4444'; // Rojo
+                badge.style.color = 'white';
+                badge.textContent = '🔴 CERRADO';
+            }
+        }
+
+        // ✅ FUNCIÓN PARA TOGGLE DE ESTADO
+        async function toggleEstado(event) {
+            event?.preventDefault?.();
+            
+            try {
+                const token = localStorage.getItem('supabaseAuthToken');
+                if (!token) throw new Error('No autenticado');
+
+                // Alternar el estado
+                const newEstado = !currentEstado;
+
+                console.log(`🔄 Cambiando estado restaurante a: ${newEstado ? 'ABIERTO' : 'CERRADO'}`);
+
+                // Enviar al backend
+                const response = await fetch('http://localhost:3000/api/restaurants/estado', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ es_abierto: newEstado })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al actualizar estado');
+                }
+
+                // Actualizar estado global y UI
+                currentEstado = newEstado;
+                actualizarBadgeEstado();
+
+                showAlert(
+                    `✅ Restaurante ahora está: ${newEstado ? 'ABIERTO ✓' : 'CERRADO ✗'}`,
+                    newEstado ? 'success' : 'warning'
+                );
+
+                console.log('✅ Estado actualizado:', newEstado);
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('Error actualizando estado: ' + error.message, 'danger');
+            }
+        }
+
+        function abrirModalPerfil() {
+            cargarPerfilRestaurante(); // Cargar datos actuales
+            const modal = new bootstrap.Modal(document.getElementById('perfilModal'));
+            modal.show();
+        }
+
         // ✅ FUNCIONES PARA PERFIL
         async function cargarPerfilRestaurante() {
             try {
@@ -639,6 +735,10 @@
                 document.getElementById('perfilImagen').value = restaurante.image_url || '';
                 document.getElementById('perfilDireccion').value = restaurante.direccion || '';
                 document.getElementById('perfilTelefono').value = restaurante.telefono || '';
+
+                // Cargar estado (abierto/cerrado)
+                currentEstado = restaurante.es_abierto === true || restaurante.es_abierto === 1;
+                actualizarBadgeEstado();
 
                 // Mostrar preview de imagen
                 if (restaurante.image_url) {
@@ -717,6 +817,7 @@
 
         // ✅ FUNCIONES PARA PRODUCTOS
         function showAddProductForm() {
+            cargarCategorias(); // Cargar categorías cuando se abre el modal
             const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
             modal.show();
         }
@@ -729,8 +830,12 @@
                 const api = window.rapiRushAPI;
                 if (!api) throw new Error('API no disponible');
 
-                // Buscar producto en la lista cargada
-                const product = restauranteOrders.flatMap(o => o.items || []).find(item => item.id === productId);
+                // Cargar categorías primero
+                await cargarCategorias();
+
+                // Obtener producto directamente de la API
+                const response = await api.request(`/products/${productId}`);
+                const product = response.product || response.data;
                 
                 if (!product) throw new Error('Producto no encontrado');
 
@@ -738,9 +843,9 @@
                 currentProductId = productId;
                 document.getElementById('productName').value = product.nombre || '';
                 document.getElementById('productDesc').value = product.descripcion || '';
-                document.getElementById('productCategory').value = product.categoria || '';
-                document.getElementById('productPrice').value = product.base_price || product.precio || '';
-                document.getElementById('productImage').value = product.image_url || '';
+                document.getElementById('productCategory').value = product.categoria_id || '';
+                document.getElementById('productPrice').value = product.precio || '';
+                document.getElementById('productImage').value = product.imagen_url || '';
 
                 // Cambiar título del modal
                 const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
@@ -787,10 +892,9 @@
             const producto = {
                 nombre: document.getElementById('productName').value.trim(),
                 descripcion: document.getElementById('productDesc').value.trim(),
-                categoria: document.getElementById('productCategory').value,
-                base_price: parseFloat(document.getElementById('productPrice').value),
-                image_url: document.getElementById('productImage').value.trim(),
-                sizes: [] // Por ahora sin tamaños
+                categoria_id: document.getElementById('productCategory').value,
+                precio: parseFloat(document.getElementById('productPrice').value),
+                imagen_url: document.getElementById('productImage').value.trim()
             };
 
             if (!producto.nombre || !producto.categoria || !producto.base_price) {

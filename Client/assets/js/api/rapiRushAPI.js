@@ -621,6 +621,19 @@ class RapiRushAPI {
       return { available: [], unavailable: [] };
     }
   }
+
+  // ✅ OBTENER TODAS LAS CATEGORÍAS
+  async getCategories() {
+    try {
+      console.log('📂 Obteniendo categorías...');
+      
+      const response = await this.request('/products/categories');
+      return response.categories || [];
+    } catch (error) {
+      console.error('❌ Error obteniendo categorías:', error);
+      return [];
+    }
+  }
 }
 
 // Hacer disponible globalmente

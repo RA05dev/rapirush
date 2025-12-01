@@ -36,9 +36,10 @@ router.get('/debug/restaurants-count', async (req, res) => {
 // ✅ RUTAS PÚBLICAS
 router.get('/', restaurantController.getAllRestaurants);
 router.get('/search', restaurantController.searchRestaurants);
-router.get('/:id', restaurantController.getRestaurantById);
 
 // ✅ RUTAS PROTEGIDAS
+router.put('/estado', authMiddleware, restaurantController.updateEstado);
 router.put('/:id', authMiddleware, restaurantController.updateRestaurant);
+router.get('/:id', restaurantController.getRestaurantById);
 
 export default router;
